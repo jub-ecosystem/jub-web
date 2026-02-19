@@ -102,8 +102,6 @@ Buscador Nacional de Datos e Información Estratégica
 </template>
 
 <script setup lang="ts">
-import { v } from 'vue-router/dist/router-CWoNjPRp.mjs';
-
 // Define the menu items here to keep the template clean
 // The students can later map these to Vue Router paths
 const menuItems = [
