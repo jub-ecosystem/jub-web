@@ -14,6 +14,16 @@ const router = createRouter({
   routes: setupLayouts(routes),
 })
 
+
+
+
+router.beforeEach(async (to, from, next) => {
+  // Scroll to top on route change
+  window.scrollTo(0, 0)
+  // TODO: Add authentication checks here
+  next()
+})
+
 // Workaround for https://github.com/vitejs/vite/issues/11804
 router.onError((err, to) => {
   if (err?.message?.includes?.('Failed to fetch dynamically imported module')) {
