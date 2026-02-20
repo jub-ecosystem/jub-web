@@ -31,7 +31,7 @@ jobs:
         run: mkdir -p "${JUB_LOG_PATH}"
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm i --legacy-peer-deps
 
       - name: Lint with ESLint
         run: npm run lint
