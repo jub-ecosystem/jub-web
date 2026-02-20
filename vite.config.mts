@@ -1,3 +1,5 @@
+/// <reference types="vitest/config" />
+
 // Plugins
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
@@ -14,6 +16,18 @@ import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    server: {
+      deps: {
+        inline: [
+          'vuetify',
+          'vue-router',
+        ],
+      },
+    },
+  },
   plugins: [
     VueRouter({
       dts: 'src/typed-router.d.ts',
@@ -22,6 +36,7 @@ export default defineConfig({
     AutoImport({
       imports: [
         'vue',
+        'vitest',
         VueRouterAutoImports,
         {
           pinia: ['defineStore', 'storeToRefs'],
