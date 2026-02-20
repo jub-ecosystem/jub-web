@@ -1,0 +1,46 @@
+name: Run Unit Test via Vitest 
+  
+on:
+  push: 
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+    paths:
+      - "src/**"
+      - "package.json"
+      - "vite.config.ts"
+
+jobs:  
+  test:  
+    runs-on: ubuntu-latest  
+    env:
+      JUB_LOG_PATH: ${{ github.workspace }}/log
+    strategy:  
+      matrix:  
+        node-version: ["20.x"]
+    steps:  
+      - uses: actions/checkout@v4  
+      
+      - name: Set up Node.js ${{ matrix.node-version }}  
+        uses: actions/setup-node@v4  
+        with:  
+          node-version: ${{ matrix.node-version }}  
+          cache: "npm" # Automatically caches node_modules to speed up runs
+
+      - name: Prepare log folder
+        run: mkdir -p "${JUB_LOG_PATH}"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint with ESLint
+        run: npm run lint
+        continue-on-error: true  
+        
+      - name: Type Check (TypeScript)
+        # Prevents merging if there are TS compilation errors
+        run: npm run type-check
+        
+      - name: Test with Vitest & Generate Coverage
+        # The 'run' flag forces Vitest to execute once and exit, ignoring watch mode
+        run: npx vitest run --coverage
