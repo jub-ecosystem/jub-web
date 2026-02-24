@@ -15,36 +15,9 @@
  */
 
 <template>
-    <v-app-bar app color="white" elevation="1" height="80" class="px-6">
-      
-      <div class="d-flex align-center">
-        <v-avatar color="grey-lighten-3" size="50" class="mr-4">
-          <v-img src="@/assets/cinvestav.svg" contain></v-img>
-          <!-- <span class="text-caption">Logo 1</span> -->
-        </v-avatar>
-        <!-- This logo is not visible , it is only a placeholder -->
-        <v-avatar color="grey-lighten-3" size="50" class="mr-4">
-          <v-img src="@/assets/secihti.svg" contain></v-img>
-        </v-avatar>
-        <!-- <v-avatar color="grey-lighten-3" size="50">
-          <span class="text-caption">Logo 3</span>
-        </v-avatar> -->
-      </div>
 
-      <v-spacer></v-spacer>
+    <!-- Navigation Drawer  -->
 
-      <div class="d-none d-md-flex align-center">
-        <v-btn 
-          v-for="item in menuItems" 
-          :key="item.title"
-          :append-icon="item.hasDropdown ? 'mdi-menu-down' : undefined"
-          variant="text" 
-          class="text-none font-weight-medium mx-1"
-        >
-          {{ item.title }}
-        </v-btn>
-      </div>
-    </v-app-bar>
 
       <v-sheet 
         color="blue-grey-darken-4" 
@@ -57,7 +30,7 @@
             <!-- <span class="text-h5 text-grey-darken-3">Central Logo</span> -->
           </v-avatar>
 
-          <h1 class="text-h4 font-weight-bold text-white mb-4">
+          <h1 :class="[responsiveBannerTitle, 'font-weight-bold', 'text-white', 'mb-4']">
             Jub: Unificación de Servicios de Ciencia de Datos
 para la Construcción de un Concentrador, Distribuidor y
 Buscador Nacional de Datos e Información Estratégica
@@ -68,8 +41,8 @@ Buscador Nacional de Datos e Información Estratégica
           </p>
 
           <div class="d-flex justify-center gap-4">
-            <v-btn color="black" rounded="pill" size="x-large" class="px-10 text-white border">
-              Ver más
+            <v-btn @click="onClickDemo" color="black" rounded="pill" size="x-large" class="px-10 text-white border">
+              Demo
             </v-btn>
             <v-btn color="black" rounded="pill" size="x-large" class="px-10 text-white border">
               Contacto
@@ -98,20 +71,51 @@ Buscador Nacional de Datos e Información Estratégica
           </v-col>
         </v-row>
       </v-container>
-
 </template>
 
 <script setup lang="ts">
+// import { useRouter } from 'vue-router';
 // Define the menu items here to keep the template clean
 // The students can later map these to Vue Router paths
-const menuItems = [
-  { title: 'Inicio', hasDropdown: false },
-  { title: 'Servicios', hasDropdown: true },
-  { title: 'Casos de uso', hasDropdown: true },
-  { title: 'Observatorios', hasDropdown: true },
-  { title: 'Recursos', hasDropdown: true },
-  { title: 'Contacto', hasDropdown: false },
-];
+import { useDisplay } from 'vuetify'; 
+import { useAuthStore } from '@/stores/auth';
+import { useRouter } from 'vue-router';
+import AuthDialog from '@/components/AuthDialog.vue';
+definePage({
+  name: 'Home',
+  meta: {
+    requiresAuth: false,
+    layout: 'default',
+  },
+});
+
+
+const router = useRouter();
+const authStore = useAuthStore();
+const { name } = useDisplay();
+
+const responsiveBannerTitle = computed(() => {
+  if (name.value === 'xs') return 'text-h5';
+  if (name.value === 'sm') return 'text-h4';
+  if (name.value === 'md') return 'text-h3';
+  return 'text-h4';
+ 
+});
+
+function onClickDemo() {
+  const result = authStore.getUser(); 
+  if (result) {
+    // User is logged in, navigate to the demo page
+    router.push({ name: 'Dashboard' });
+  } else {
+    authStore.pendingRedirect = '/dashboard';
+    authStore.showAuthDialog = true;
+  }
+}
+
+
+
+
 </script>
 
 <style scoped>

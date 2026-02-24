@@ -8,7 +8,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { setupLayouts } from 'virtual:generated-layouts'
 import { routes } from 'vue-router/auto-routes'
-
+import { useAuthStore, type VerifyDTO } from '@/stores/auth'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: setupLayouts(routes),
@@ -18,10 +18,44 @@ const router = createRouter({
 
 
 router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore();
+  const requiresAuth = to.meta.requiresAuth || false;
+
+  console.log(`Navigating from ${from.fullPath} to ${to.fullPath} - [requiresAuth: ${requiresAuth}]`)
+  const token    = localStorage.getItem('token');
+  const secret   = localStorage.getItem('secret');
+  const username = localStorage.getItem('username');
+
+  // if (to.fullPath == "/" && token && secret && username) {
+  //   const isAuthenticated = await authStore.verifyToken({ access_token: token, secret, username } as VerifyDTO)
+
+  //   if (isAuthenticated) {
+  //     console.log("User already authenticated, redirecting to /dashboard")
+  //     return next(from.fullPath != "/" ? from.fullPath : {name:"Dashboard"})
+  //   }
+  // }
+
+  if (!requiresAuth ) {
+
+    return next() 
+  } 
+
+  else if (!token || !secret || !username) {
+    console.log("Missing authentication data, redirecting to home.")
+    return next("/")
+  } 
+  
+  else {
+    const isAuthenticated = await authStore.verifyToken({ access_token: token, secret, username } as VerifyDTO)
+
+    if (!isAuthenticated) {
+      return next("/")
+    }
+    return next()
+  }
   // Scroll to top on route change
-  window.scrollTo(0, 0)
   // TODO: Add authentication checks here
-  next()
+  // next()
 })
 
 // Workaround for https://github.com/vitejs/vite/issues/11804

@@ -1,58 +1,51 @@
 <template>
-<v-navigation-drawer v-model="drawer" temporary location="right">
-      <v-list nav>
-        <template v-for="item in menuItems" :key="item.title">
-          
-          <v-list-group v-if="item.hasDropdown" :value="item.title">
+
+  <v-navigation-drawer v-model="drawer" temporary location="right">
+        <v-list nav>
+          <template v-for="item in menuItems" :key="item.title">
             
-            <template v-slot:activator="{ props }">
+            <v-list-group v-if="item.hasDropdown" :value="item.title">
+              
+              <template v-slot:activator="{ props }">
+                <v-list-item
+                  v-bind="props"
+                  :title="item.title"
+                  class="font-weight-medium"
+                ></v-list-item>
+              </template>
+              
               <v-list-item
-                v-bind="props"
-                :title="item.title"
-                class="font-weight-medium"
+                v-for="subItem in item.items"
+                :key="`mobile_${subItem.title}`"
+                :title="subItem.title"
+                :value="subItem.title"
+                @click="onMenuClick(subItem)"
+                class="ml-4" 
               ></v-list-item>
-            </template>
-            
-            <v-list-item
-              v-for="subItem in item.items"
-              :key="`mobile_${subItem.title}`"
-              :title="subItem.title"
-              :value="subItem.title"
-              @click="onMenuClick(subItem)"
-              class="ml-4" 
+              </v-list-group>
+
+            <v-list-item 
+              v-else
+              :title="item.title"
+              :value="item.title"
+              @click="onMenuClick(item)"
+              class="font-weight-medium"
             ></v-list-item>
-            </v-list-group>
 
-          <v-list-item 
-            v-else
-            :title="item.title"
-            :value="item.title"
-            @click="onMenuClick(item)"
-            class="font-weight-medium"
-          ></v-list-item>
+          </template>
+        </v-list>
+  </v-navigation-drawer>    
 
-        </template>
-      </v-list>
-    </v-navigation-drawer>    
-    
-    
-   
 
-    <v-app-bar app color="white" elevation="1" height="80" class="px-6">
 
-      <!-- Navigation Drawer Toggle -->
-
-      <div class="d-flex align-center">
-        <v-avatar color="grey-lighten-3" size="50" class="mr-4">
-          <v-img src="@/assets/cinvestav.svg" contain></v-img>
-          <!-- <span class="text-caption">Logo 1</span> -->
-        </v-avatar>
-        <v-img width="200" src="@/assets/secihti.svg" contain></v-img>
- 
-      </div>
-
+  <v-app-bar app color="black" elevation="1" height="80" class="px-6">
+    <v-btn color="white" variant="outlined" rounded class="text-none font-weight-bold" @click="router.push('/')">
+      Prueba
+    </v-btn>
+    <!-- <v-avatar size="60"> -->
+      <!-- <v-img src="@/assets/logo.svg" alt="JUB Logo"></v-img> -->
+    <!-- </v-avatar> -->
       <v-spacer></v-spacer>
-
       <div class="d-none d-md-flex align-center">
           <v-btn 
             v-for="item in menuItems" 
@@ -75,14 +68,9 @@
     
 
       <v-app-bar-nav-icon class="d-md-none ml-2" variant="text" @click="drawer = !drawer" color="black"/>
-    </v-app-bar>    
+  </v-app-bar>    
     
-    <v-main>
-        <router-view />
-    </v-main>
-
 </template>
-
 <script lang="ts" setup>
 interface MenuItem {
   title: string;
@@ -112,11 +100,9 @@ const drawer = ref(false);
 
 function onMenuClick(item: MenuItem) {
   if (item.hasDropdown) {
-    // Handle dropdown logic here (e.g., toggle submenu)
+    // If it's a dropdown, we don't navigate, just toggle the menu
     return;
   }
-  router.push(item.route);
-  drawer.value = false; // Close the drawer after navigation
-}
-
+  router.push(item.route);  
+} 
 </script>

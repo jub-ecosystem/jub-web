@@ -3,6 +3,8 @@
         <h1>Dashboard 2</h1>
     </v-container>
 </template>
+
+
 <script lang="ts" setup>
   //
       definePage({

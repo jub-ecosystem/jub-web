@@ -1,6 +1,7 @@
 <template>
   <v-app>
     <router-view />
+    <auth-dialog/>
   </v-app>
 </template>
 
