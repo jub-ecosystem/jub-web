@@ -20,3 +20,6 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+.actrc
+run_actions.sh
+send_to_prod.sh

@@ -1,8 +1,7 @@
 <template>
-  <v-app>
+  <v-main>
     <router-view />
-    <auth-dialog/>
-  </v-app>
+  </v-main>
 </template>
 
 <script lang="ts" setup>

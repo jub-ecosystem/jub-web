@@ -1,0 +1,49 @@
+services:
+  
+  jubui:
+    
+    image: nachocode/jub:ui-0.0.1a0
+    
+    environment:
+      VITE_APP_JUB_API: ""
+    
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+      
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.jubui.rule=Host(`jub.tamps.cinvestav.mx`)"
+        - "traefik.http.routers.jubui.entrypoints=websecure"
+        - "traefik.http.routers.jubui.tls=true"
+        - "traefik.http.routers.jubui.tls.certresolver=resolverx"
+        - "traefik.http.routers.jubui-http.rule=Host(`jub.tamps.cinvestav.mx`)"
+        - "traefik.http.routers.jubui-http.entrypoints=web"
+        - "traefik.http.services.jubui.loadbalancer.server.port=80"
+        - "traefik.http.routers.jubui-http.middlewares=redirect-to-https"
+        - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+      update_config:
+        parallelism: 1
+        delay: 10s
+
+      placement:
+        constraints: [node.role == worker]
+
+      restart_policy:
+        condition: on-failure
+    
+    networks:
+      - jub
+      - traefik-pub
+
+networks:
+  
+  traefik-pub:
+    external: true
+  
+  jub:
+    external: true
