@@ -1,14 +1,19 @@
 services:
+  
   jubui:
+    
     image: nachocode/jub:ui-0.0.1a0
+    
     environment:
       VITE_APP_JUB_API: ""
+    
     deploy:
       replicas: 1
       resources:
         limits:
           cpus: '1'
           memory: 1G
+      
       labels:
         - "traefik.enable=true"
         - "traefik.http.routers.jubui.rule=Host(`jub.tamps.cinvestav.mx`)"
@@ -24,16 +29,21 @@ services:
       update_config:
         parallelism: 1
         delay: 10s
+
       placement:
         constraints: [node.role == worker]
+
       restart_policy:
         condition: on-failure
+    
     networks:
       - jub
       - traefik-pub
 
 networks:
+  
   traefik-pub:
     external: true
+  
   jub:
     external: true
