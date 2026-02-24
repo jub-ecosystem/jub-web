@@ -38,7 +38,7 @@
 
 
 
-  <v-app-bar app color="black" elevation="1" height="80" class="px-6">
+  <v-app-bar app :color="props.color" elevation="1" height="80" class="px-6">
     <v-btn color="white" variant="outlined" rounded class="text-none font-weight-bold" @click="router.push('/')">
       Prueba
     </v-btn>
@@ -67,7 +67,7 @@
       </div>
     
 
-      <v-app-bar-nav-icon class="d-md-none ml-2" variant="text" @click="drawer = !drawer" color="black"/>
+      <v-app-bar-nav-icon class="d-md-none ml-2" variant="text" @click="drawer = !drawer" color="white"/>
   </v-app-bar>    
     
 </template>
@@ -95,6 +95,17 @@ const menuItems: MenuItem[] = [
   {title: "Observatorios", hasDropdown: true, route: '/observatory'},
   { title: 'Contacto', hasDropdown: false, route: '/contact' },
 ];
+
+
+
+const props = defineProps({
+  color: {
+    type: String,
+    default: 'black',
+  },
+});
+
+
 const drawer = ref(false);
 
 
