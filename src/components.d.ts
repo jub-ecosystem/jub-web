@@ -12,6 +12,9 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AuthDialog: typeof import('./components/AuthDialog.vue')['default']
+    HeroSection: typeof import('./components/HeroSection.vue')['default']
+    ObservatoryCard: typeof import('./components/ObservatoryCard.vue')['default']
+    ObservatoryCarousel: typeof import('./components/ObservatoryCarousel.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     ServiceAppBar: typeof import('./components/ServiceAppBar.vue')['default']
