@@ -5,7 +5,7 @@
     min-height="850"
   >
     <v-container>
-      <v-avatar color="grey-lighten-2" :size="name === 'xs' ? 240 : 380"  class="mb-10 border-lg">
+      <v-avatar color="grey-lighten-2" :size="name === 'xs' ? 160 : 320"  class="mb-10 border-lg">
         <v-img src="@/assets/logo.svg" contain></v-img>
       </v-avatar>
 
