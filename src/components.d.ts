@@ -19,6 +19,8 @@ declare module 'vue' {
     ObservatoryCarousel: typeof import('./components/landing/sections/ObservatoryCarousel.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    Separator: typeof import('./components/Separator.vue')['default']
+    Separatore: typeof import('./components/Separator.vue')['default']
     ServiceAppBar: typeof import('./components/ServiceAppBar.vue')['default']
     StatsSection: typeof import('./components/landing/sections/StatsSection.vue')['default']
     ValueProposition: typeof import('./components/landing/sections/ValueProposition.vue')['default']
