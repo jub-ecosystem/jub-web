@@ -1,6 +1,6 @@
 <template>
   <v-sheet 
-    color="blue-grey-darken-4"
+    color="primary-blue"
     class="d-flex align-center justify-center text-center px-4"
     min-height="850"
   >
