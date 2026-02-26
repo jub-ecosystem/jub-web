@@ -35,6 +35,26 @@ const observatories = [
     chartImage1: '',
     chartImage2: ''
   },
+  {
+    title: 'Azomalli: Observatorio de salud mental',
+    description: 'Fusión de datos meteorológicos retrospectivos y observaciones terrestres para lograr una cobertura territorial integral.',
+    author: 'Xelhua Nez',
+    rating: 5,
+    reviews: 100,
+    tags: ['Salud', 'IA', '2026'],
+    chartImage1: '',
+    chartImage2: ''
+  },
+  {
+    title: 'Azomalli: Observatorio de salud mental',
+    description: 'Fusión de datos meteorológicos retrospectivos y observaciones terrestres para lograr una cobertura territorial integral.',
+    author: 'Xelhua Nez',
+    rating: 5,
+    reviews: 100,
+    tags: ['Salud', 'IA', '2026'],
+    chartImage1: '',
+    chartImage2: ''
+  },
 ];
 </script>
 

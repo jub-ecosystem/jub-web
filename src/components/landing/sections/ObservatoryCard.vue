@@ -44,7 +44,7 @@
 
           <v-spacer></v-spacer>
 
-          <v-btn color="secondary-blue" block rounded="pill" class="text-none mt-4"> VER MÁS </v-btn>
+          <v-btn size="large"  color="secondary-blue" rounded="pill" class="text-none mt-4"> VER MÁS </v-btn>
         </v-col>
       </v-row>
     </v-card-text>
