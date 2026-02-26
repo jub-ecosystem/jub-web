@@ -16,21 +16,21 @@
 <template >
   <HeroSection />
 
-   <div class="d-flex" style="height: 20px; width: 100%;">
+   <Separator :size="20"/>
+   <!-- <div class="d-flex" style="height: 20px; width: 100%;">
     <div class="flex-grow-1 bg-blue-darken-1"></div>
     <div class="flex-grow-1 bg-blue-accent-4"></div>
     <div class="flex-grow-1 bg-blue-darken-4"></div>
     <div class="flex-grow-1 bg-blue-accent-3"></div>
-  </div>
-  <ObservatoryCarousel class=" mt-16" />
+  </div> -->
+  <ObservatoryCarousel/>
 
-  <ValueProposition class=" mt-16"/>
+  <ValueProposition/>
   
-  <StatsSection class=" mt-16"/>
+  <StatsSection />
   
-  <HowItWorksSection class=" mt-16"/>
-
-  <LandingFooter class=" mt-16"/>
+  <HowItWorksSection />
+  <LandingFooter />
 
   
 </template>
