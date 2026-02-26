@@ -1,8 +1,8 @@
 <template>
-  <v-card variant="flat" rounded="xl" class="pa-6 mx-auto" max-width="1000">
+  <v-card color="white"  rounded="xl" class="pa-6 mx-auto" max-width="1000">
     <v-card-title class="text-h5 font-weight-bold text-center mb-6"> {{ title }} </v-card-title>
 
-    <v-card-text>
+    <v-card-text >
       <v-row>
         <v-col cols="12" md="6">
           <v-row dense>
