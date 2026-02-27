@@ -17,7 +17,7 @@
 
     <v-row>
       <v-col v-for="member in teamStore.filteredMembers" :key="member.id" cols="12" sm="6" md="4">
-        <ContactCard :member="member" />
+        <ContactCard :member="member" @show-details="openDialog" />
       </v-col>
     </v-row>
 
