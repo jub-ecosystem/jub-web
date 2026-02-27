@@ -12,8 +12,17 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AuthDialog: typeof import('./components/AuthDialog.vue')['default']
+    HeroSection: typeof import('./components/landing/sections/HeroSection.vue')['default']
+    HowItWorksSection: typeof import('./components/landing/sections/HowItWorksSection.vue')['default']
+    LandingFooter: typeof import('./components/landing/sections/LandingFooter.vue')['default']
+    ObservatoryCard: typeof import('./components/landing/sections/ObservatoryCard.vue')['default']
+    ObservatoryCarousel: typeof import('./components/landing/sections/ObservatoryCarousel.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    Separator: typeof import('./components/Separator.vue')['default']
+    Separatore: typeof import('./components/Separator.vue')['default']
     ServiceAppBar: typeof import('./components/ServiceAppBar.vue')['default']
+    StatsSection: typeof import('./components/landing/sections/StatsSection.vue')['default']
+    ValueProposition: typeof import('./components/landing/sections/ValueProposition.vue')['default']
   }
 }
