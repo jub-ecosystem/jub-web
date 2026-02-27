@@ -3,7 +3,7 @@
     <v-img :src="member.image" height="250" cover class="ma-2 rounded-lg"></v-img>
     
     <v-card-item class="text-center">
-      <div class="text-h6 font-weight-bold">{{ member.name }}</div>
+      <div class="text-h6 font-weight-bold text-capitalize">{{ member.name }}</div>
       
       <div class="d-flex align-center justify-center mt-1 grey--text">
         <v-icon size="small" class="mr-1" color="primary-darken-2">mdi-phone</v-icon>
