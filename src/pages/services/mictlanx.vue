@@ -124,7 +124,7 @@ function onClickDemo() {
   The linear-gradient helps darken the image so the white text stays readable!
 */
 .hero-section {
-  background-image: linear-gradient(to bottom, rgba(15, 15, 15, 0.8), rgba(20, 20, 20, 0.95)), url('@/assets/mictlanx_hero_section.svg');
+  background-image: linear-gradient(to bottom, rgba(15, 15, 15, 0.8), rgba(20, 20, 20, 0.95)), url('@/assets/mictlanx_hs_25s.svg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
