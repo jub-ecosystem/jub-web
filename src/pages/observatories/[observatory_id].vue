@@ -72,7 +72,7 @@ import { ref, onMounted } from 'vue';
 // import { useDashboardStore, type Dashboard } from '@/stores/dashboard';
 import { type ProductXDTO } from '@/types/index.types';
 import { useJubStore } from '@/stores/jub';
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 
 definePage({
@@ -89,6 +89,7 @@ definePage({
 // const dashboardStore = useDashboardStore();
 // dashboardStore.initObservatory();
 const router = useRouter();
+const route = useRoute('ObservatoryDetails');
 const jubStore = useJubStore();
 const filteredProducts = ref<ProductXDTO[]>([]);
 const viewMode = ref<'grid' | 'table'>('grid');
@@ -135,12 +136,21 @@ const validateDsl = (v: string): true | string => {
 
 const dslRules: Array<(v: string) => true | string> = [validateDsl];
 
+
+const currentPage = 0;
+const itemsPerPage = 10;
+
 const executeSearch = async () => {
   // Por ejemplo, podrías llamar a un método en tu JubStore que procese el DSL y devuelva resultados.
   const validationResult = validateDsl(searchQuery.value);
 
   if (validationResult === true) {
-    const result = await jubStore.search(searchQuery.value);
+    const result = await jubStore.search(
+      searchQuery.value,
+      route.params.observatory_id as string,
+      currentPage,
+      itemsPerPage
+    );
     console.log("Resultados de la búsqueda:", result);
     filteredProducts.value = result; // Actualiza la lista de observatorios mostrados  
 

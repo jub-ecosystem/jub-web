@@ -53,7 +53,7 @@ export const useJubStore = defineStore('jub', () => {
         }
     }
 
-    async function search(query:string): Promise<ProductXDTO[]>{
+    async function search(query:string,observatory_id:string,skip:number,limit:number): Promise<ProductXDTO[]>{
         try{
             isLoading.value = true;
             const response = await fetch(`${API_URL}/api/v2/search`, {
@@ -61,7 +61,7 @@ export const useJubStore = defineStore('jub', () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ query })
+                body: JSON.stringify({ query,observatory_id, skip,limit })
             });
             if(response.ok){
                 const data:ProductXDTO[] = await response.json();
