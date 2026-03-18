@@ -1,65 +1,62 @@
 <template>
-<v-navigation-drawer  app permanent v-model="drawer" rail>
-   <v-list>
-          <v-list-item
-            class="cursor-pointer"
-            prepend-avatar="https://randomuser.me/api/portraits/men/85.jpg"
-            title="John Leider"
-            :to="{'name': 'UserProfile'}"
-          >
-            <template v-slot:append>
-              <v-btn
-                icon="mdi-chevron-left"
-                variant="text"
-              ></v-btn>
-            </template>
-          </v-list-item>
-          
-        </v-list>
+  <v-navigation-drawer app permanent v-model="props.modelValue" rail>
+    <v-list>
+      <v-list-item class="cursor-pointer"
+        :prepend-avatar="`https://api.dicebear.com/9.x/bottts/svg?seed=${currentUser?.first_name}`"
+        :title="`${currentUser?.first_name} ${currentUser?.last_name}`" :to="{ 'name': 'UserProfile' }">
+        <template v-slot:append>
+          <v-btn icon="mdi-chevron-left" variant="text"></v-btn>
+        </template>
+      </v-list-item>
 
-        <v-divider></v-divider>
+    </v-list>
 
-        <v-list density="compact" nav>
-          <v-list-item
-            prepend-icon="mdi-home-city"
-            title="Observatories"
-            value="observatories"
-            :to="{'name':'Dashboard'}"
-          ></v-list-item>
-          <v-list-item
-            prepend-icon="mdi-book-open"
-            title="Catalogs"
-            value="catalogs"
-            :to="{'name':'Catalogs'}"
-          ></v-list-item>
-          <v-list-item
-            prepend-icon="mdi-graph"
-            title="Products"
-            value="products"
-            :to="{'name':'Products'}"
-          ></v-list-item>
-            <v-list-item
-            prepend-icon="mdi-cog"
-            title="Settings"
-            value="settings"
-            :to="{'name':'Settings'}"
-          ></v-list-item>
-        <v-list-item
-            prepend-icon="mdi-logout"
-            title="Logout"
-            value="logout"
-            @click="logout"
-          ></v-list-item>
-        </v-list>
+    <v-divider></v-divider>
+
+    <v-list density="compact" nav>
+      <v-list-item prepend-icon="mdi-home-city" title="Observatories" value="observatories"
+        :to="{ 'name': 'Dashboard' }"></v-list-item>
+      <v-list-item prepend-icon="mdi-book-open" title="Catalogs" value="catalogs"
+        :to="{ 'name': 'Catalogs' }"></v-list-item>
+      <v-list-item prepend-icon="mdi-graph" title="Products" value="products"
+        :to="{ 'name': 'Products' }"></v-list-item>
+      <v-list-item prepend-icon="mdi-clipboard-text" title="Tasks" value="tasks"
+        :to="{ 'name': 'TasksIndex' }"></v-list-item>
+      <v-list-item prepend-icon="mdi-cog" title="Settings" value="settings" :to="{ 'name': 'Settings' }"></v-list-item>
+      <v-list-item prepend-icon="mdi-logout" title="Logout" value="logout" @click="logout"></v-list-item>
+    </v-list>
   </v-navigation-drawer>
 </template>
 <script lang="ts" setup>
-import {useRouter} from 'vue-router'
-const drawer = ref(true)
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { useAppStore,SnackbarColor } from '@/stores/app';
+// const drawer = ref(true)
 const router = useRouter()
+const authStore = useAuthStore();
+const currentUser = computed(() => authStore.getUser());
+const appStore = useAppStore();
 
-const logout = () => {
-    console.log(`Logout`)
-    router.push({"name":"Home"})
+const props = defineProps<{
+  modelValue: boolean
+}>()
+
+
+const logout = async () => {
+  try {
+    const  response = await authStore.logout();
+    if (response) {
+      appStore.showSnackbar("Has salido del sistema exitosamente",3000,SnackbarColor.SUCCESS);
+    } else {
+      appStore.showSnackbar("Error al cerrar sesión",3000,SnackbarColor.ERROR);
+    }
+    router.push({ "name": "Home" })
+  } catch (error) {
+    console.error('Logout error:', error);
+  } finally {
+
+  }
+  // console.log(`Logout`)
+  // router.push({"name":"Home"})
 }
 </script>

@@ -49,19 +49,37 @@
       </v-responsive>
     </div>
 
-    <v-row v-if="viewMode === 'grid'">
+    <!-- Observatories Grid View -->
+    <v-row v-if="viewMode === 'grid' && filteredObservatories.length > 0" class="d-flex align-stretch">
       <v-col v-for="observatory in filteredObservatories" :key="observatory.observatory_id" cols="12" sm="6" md="6">
         <ObservatoryCard :observatory="observatory" @show-details="goToDetails" />
       </v-col>
     </v-row>
-
-    <v-row v-else-if="viewMode === 'table'">
+    <!-- Observatories Table View -->
+    <v-row v-else-if="viewMode === 'table' && filteredObservatories.length > 0">
       <v-col cols="12">
         <ObservatoryTables :items="filteredObservatories" @show-details="goToDetails" />
       </v-col>
     </v-row>
+     <!-- No Observatories Found -->
+    <v-row class="d-flex justify-center" v-else-if="searchCounter>0 && filteredObservatories.length == 0">
+        <v-empty-state
+          icon="mdi-package-variant-remove"
+          image="https://vuetifyjs.b-cdn.net/docs/images/components/v-empty-state/astro-cat.svg"
+          headline="Sin observatorios asociados"
+          title="No hay observatorios asociados a esta consulta."
+          text="Pero puedes programar una nueva tarea para crear un observatorio privado que podrás publicar después."
+          action-text="Personalizar Tarea de Observatorio"
+          @click:action="showCreateDialog = true"
+          color="primary"
+          action-color="primary"
+        >
+        </v-empty-state>
+    </v-row>
 
-    <!-- <ObservatoryDialog v-model="showDialog" :observatory="selectedobservatory" /> -->
+    <!-- Create observatory dialog -->
+    <CreateObservatoryDialog :model-value="showCreateDialog" @update:model-value="showCreateDialog = $event" />
+  
   </v-container>
 </template>
 
@@ -71,33 +89,55 @@ import { ref, onMounted } from 'vue';
 import { type ObservatoryDTO } from '@/types/index.types';
 import { useJubStore } from '@/stores/jub';
 import { useRouter } from 'vue-router'
+import { useAppStore,SnackbarColor } from '@/stores/app';
 
 
 definePage({
   name: 'Dashboard',
   meta: {
-    requiresAuth: false,
+    requiresAuth: true,
     layout: 'dashboard',
   },
 });
 
 // const dashboardStore = useDashboardStore();
 // dashboardStore.initObservatory();
-const router = useRouter();
-const jubStore = useJubStore();
+
+const showCreateDialog      = ref(false);
+const appStore              = useAppStore();
+const router                = useRouter();
+const jubStore              = useJubStore();
 const filteredObservatories = ref<ObservatoryDTO[]>([]);
-const viewMode = ref<'grid' | 'table'>('grid');
-const searchQuery = ref('jub.v1.');
-const showAutocomplete = ref(false);
-const dynamicSuggestions = ref<string[]>([]);
+const viewMode              = ref<'grid' | 'table'>('grid');
+const searchQuery           = ref('jub.v1.VS(*).VT(*).VI(*)');
+const showAutocomplete      = ref(false);
+const dynamicSuggestions    = ref<string[]>([]);
+
 const catalogData = {
-  VS: ['TAMPS', 'CDMX', 'NL', 'MEXICO'],
-  VT: ['2023', '2024', '2025', '2026'],
-  VI: ['SEX.M', 'SEX.F', 'CIE10.C50']
+  'DATASOURCE1': ['TAMPS', 'CDMX', 'NL', 'MEXICO'],
+  'DATASOURCE2': ['2023', '2024', '2025', '2026'],
+  'DATASOURCE3': ['SEX.M', 'SEX.F', 'CIE10.C50'],
+  "VS": ['TAMPS', 'CDMX', 'NL', 'MEXICO'],
+  "VT": ['2023', '2024', '2025', '2026'],
+  "VI": ['SEX.M', 'SEX.F', 'CIE10.C50']
 };
 
 
+const searchCounter = ref(0);  
 
+const newTask = ref({
+  name: '',
+  privacy: '',
+  dataSource: '',
+  catalogs: [] as string[],
+});
+const handleCreateTask = () => {
+  // Aquí puedes implementar la lógica para crear y programar la tarea de observatorio
+  // utilizando los datos de newTask.
+  console.log("Nueva tarea configurada:", newTask.value);
+  appStore.showSnackbar("Tarea creada exitosamente", 3000, SnackbarColor.SUCCESS);
+  showCreateDialog.value = false; // Cierra el diálogo después de manejar la creación
+};
 const validateDsl = (v: string): true | string => {
   // 1. Allow it to be empty (if you want users to be able to clear the search)
   if (!v) return true;
@@ -131,7 +171,8 @@ const validateDsl = (v: string): true | string => {
 const dslRules: Array<(v: string) => true | string> = [validateDsl];
 
 const executeSearch = async () => {
-  // Por ejemplo, podrías llamar a un método en tu JubStore que procese el DSL y devuelva resultados.
+  
+  searchCounter.value++; // Incrementa el contador cada vez que se ejecuta una búsqueda
   const validationResult = validateDsl(searchQuery.value);
 
   if (validationResult === true) {
@@ -212,7 +253,8 @@ const goToDetails = (observatory: ObservatoryDTO) => {
 
 onMounted(async () => {
   // jubStore.fetchObservatories();
-  filteredObservatories.value = await jubStore.get_observatories()
+  await executeSearch();
+  // filteredObservatories.value = await jubStore.search_observatories(searchQuery.value); // Carga inicial con la consulta por defecto
 });
 
 

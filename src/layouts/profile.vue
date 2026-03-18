@@ -1,6 +1,6 @@
 <template>
 
-<dashboard-drawer/>
+<dashboard-drawer :model-value="drawer"/>
 <v-app-bar app color="primary" elevation="0" height="20" class="px-6">
 
 </v-app-bar>

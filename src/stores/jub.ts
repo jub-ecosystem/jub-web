@@ -77,11 +77,38 @@ export const useJubStore = defineStore('jub', () => {
             isLoading.value = false; 
         }
     }
+    async function upload_yaml(file: File | Blob): Promise<boolean> {
+        try {
+            isLoading.value = true;
+            const formData = new FormData();
+            // El nombre 'file' debe coincidir exactamente con el parámetro de tu backend: file: UploadFile = File(...)
+            formData.append('file', file, 'config.yml');
 
+            // Ajusta la URL según el prefijo real de tu router (ej. /api/v2/search/code o /api/v2/code)
+            const response = await fetch(`${API_URL}/api/v2/code`, {
+                method: 'POST',
+                body: formData, // No agregues 'Content-Type', el navegador lo establece automáticamente como multipart/form-data
+            });
+
+            if (response.ok) {
+                return true;
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `Error al enviar YAML: ${response.statusText}`);
+            }
+        } catch (e) {
+            console.error(e);
+            error.value = e instanceof Error ? e.message : String(e);
+            return false;
+        } finally {
+            isLoading.value = false;
+        }
+    }
     return { 
         get_observatories,
         search,
         search_observatories,
+        upload_yaml,
         isLoading,
         error
     }

@@ -24,3 +24,5 @@ pnpm-debug.log*
 run_actions.sh
 send_to_prod.sh
 yarn.lock
+*.env.prod
+sync-prod-envs.sh

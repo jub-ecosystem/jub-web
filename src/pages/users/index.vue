@@ -2,7 +2,7 @@
   definePage({
     name: 'UsersIndex',
     meta: {
-        requiresAuth: false,
+        requiresAuth: true,
         layout: 'blank',
     },
 });

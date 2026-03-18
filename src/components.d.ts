@@ -14,6 +14,7 @@ declare module 'vue' {
     AuthDialog: typeof import('./components/AuthDialog.vue')['default']
     ContactCard: typeof import('./components/contact/ContactCard.vue')['default']
     ContactDialog: typeof import('./components/contact/ContactDialog.vue')['default']
+    CreateObservatoryDialog: typeof import('./components/CreateObservatoryDialog.vue')['default']
     DashboardDrawer: typeof import('./components/DashboardDrawer.vue')['default']
     HeroSection: typeof import('./components/landing/sections/HeroSection.vue')['default']
     HowItWorksSection: typeof import('./components/landing/sections/HowItWorksSection.vue')['default']

@@ -6,7 +6,7 @@
   definePage({
   name: 'Catalogs',
   meta: {
-    requiresAuth: false,
+    requiresAuth: true,
     layout: 'dashboard',
   },
 });
