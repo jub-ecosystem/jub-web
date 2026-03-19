@@ -7,14 +7,14 @@
           
           <v-col>
             <v-combobox
-              v-model:search="dashboardStore.searchQuery"
+              v-model:search="observatoriesStore.searchQuery"
               placeholder="Busca un observatorio..." 
               variant="solo-filled" 
               rounded="pill" 
               flat 
               bg-color="grey-lighten-3"  
-              :items="dashboardStore.dashboard" 
-              item-title="name"
+              :items="observatoriesStore.filteredObservatories" 
+              item-title="title"
               persistent-search
               clearable
               hide-no-data
@@ -49,16 +49,22 @@
       </v-responsive>      
     </div>
 
+    <v-progress-linear v-if="observatoriesStore.isLoading" indeterminate color="primary"></v-progress-linear>
+
+    <v-alert v-if="observatoriesStore.error" type="error" class="mb-5">
+      {{ observatoriesStore.error }}
+    </v-alert>
+
     <v-row v-if="viewMode === 'grid'">
-        <v-col v-for="observatory in dashboardStore.filteredObservatory" 
-            :key="observatory.id" cols="12" sm="6" md="6">
+        <v-col v-for="observatory in observatoriesStore.filteredObservatories" 
+            :key="observatory.obid" cols="12" sm="6" md="6">
             <ObservatoryCard :observatory="observatory" @show-details="openDialog" />
         </v-col>        
     </v-row>
 
     <v-row v-else-if="viewMode === 'table'">
       <v-col cols="12">
-        <ObservatoryTables :items="dashboardStore.filteredObservatory" @show-details="openDialog" />
+        <ObservatoryTables :items="observatoriesStore.filteredObservatories" @show-details="openDialog" />
       </v-col>
     </v-row>    
 
@@ -67,8 +73,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
-import { useDashboardStore, type Dashboard } from '@/stores/dashboard';
+import { ref, onMounted } from 'vue';
+import { useJubStore, type Observatory } from '@/stores/observatories';
 
 definePage({
   name: 'Dashboard',
@@ -78,15 +84,17 @@ definePage({
   },
 });
 
-const dashboardStore = useDashboardStore();
-dashboardStore.initObservatory();
+const observatoriesStore = useJubStore();
+//dashboardStore.initObservatory();
+onMounted(() => {
+  observatoriesStore.fetchObservatories();
+});
 
 const viewMode = ref<'grid' | 'table'>('grid');
-
 const showDialog = ref(false);
-const selectedobservatory = ref<Dashboard | null>(null);
+const selectedobservatory = ref<Observatory | null>(null);
 
-const openDialog = (observatory: Dashboard) => {
+const openDialog = (observatory: Observatory) => {
   selectedobservatory.value = observatory;
   showDialog.value = true;
 };

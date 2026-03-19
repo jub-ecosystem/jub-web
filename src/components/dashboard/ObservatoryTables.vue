@@ -9,9 +9,9 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in items" :key="item.id">
-          <td>{{ item.name }}</td>
-          <td>{{ item.percentage }}%</td>
+        <tr v-for="item in items" :key="item.obid">
+          <td>{{ item.title }}</td>
+          <td>100%</td>
           <td>
             <v-btn size="small" variant="text" color="primary" @click="$emit('show-details', item)">
               Ver detalles
