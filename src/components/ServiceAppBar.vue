@@ -93,18 +93,19 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    title: "Observatorios",
-    hasDropdown: true,
-    route: '/observatory',
-    items: [
+    title: "Observatorios", 
+    hasDropdown: true, 
+    route: '/observatory'
+    , items: [
       { title: 'Azomalli', hasDropdown: false, route: '/observatories/azomalli' },
       { title: 'IMA', hasDropdown: false, route: '/observatories/ima' },
-    ],
-
+      { title: 'Kaexla', hasDropdown: false, route: '/observatories/kaexla' },
+      { title: 'Alerta', hasDropdown: false, route: '/observatories/alerta' },
+      // { title: 'Tlalocan', hasDropdown: false, route: '/observatories/tlalocan' },
+    ]
   },
   { title: 'Contacto', hasDropdown: false, route: '/contact' },
 ];
-
 
 
 const props = defineProps({
