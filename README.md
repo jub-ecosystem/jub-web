@@ -42,6 +42,16 @@ npm run dev
 
 > Add NODE_OPTIONS='--no-warnings' to suppress the JSON import warnings that happen as part of the Vuetify import mapping. If you are on Node [v21.3.0](https://nodejs.org/en/blog/release/v21.3.0) or higher, you can change this to NODE_OPTIONS='--disable-warning=5401'. If you don't mind the warning, you can remove this from your package.json dev script.
 
+### Local deployment for development
+To deploy your project locally, use the following command:
+```bash
+docker compose --profile local -f jub.yml up -d
+npm run dev
+```
+
+⚠️You must create `.env` files with the correct environment variables for local deployment. You can use the provided `.env.dev` file as a template and update it with the appropriate values for your local environment.
+
+
 
 
 ### Local deployment with Docker
@@ -59,6 +69,13 @@ XOLO_MONGODB_LOCAL_PORT=27018
 XOLO_CACHE_REDIS_LOCAL_PORT=6379
 XOLO_LOCAL_PORT=10000
 # Other environment variables...
+```
+
+⚠️ Remember to create/update the .env.dev file with the correct local ports for MongoDB, Redis, and the API before running the deploy script. 
+
+⚠️ For local development, the `invitado` user is created with the default password `invitado`. If you want to set a different password, you can do so by setting the `VITE_DEFAULT_GUEST_PASSWORD` environment variable in your .env.dev file. For example: 
+```bash
+VITE_DEFAULT_GUEST_PASSWORD="<your_desired_password>"
 ```
 
 #### Create `invitado` user for local development
@@ -92,6 +109,9 @@ npm run build
 (Repeat for npm, pnpm, and bun with respective commands.)
 
 Once the build process is completed, your application will be ready for deployment in a production environment.
+
+
+
 ### Building for Production (Docker)
 
 To build your project for production using Docker, use:

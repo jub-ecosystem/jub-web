@@ -1,6 +1,7 @@
 services:
   xolo-db:
     image: mongo:8-noble
+    profiles: [staging,local]
     # Open ports only for development, not in production
     ports:
       - ${XOLO_MONGODB_LOCAL_PORT:-27018}:27017
@@ -24,6 +25,7 @@ services:
   # =============================
   xolo-cache:
     image: redis:7.0.11-alpine
+    profiles: [staging,local]
     # Open ports only for development, not in production
     ports:
       - ${XOLO_CACHE_REDIS_LOCAL_PORT:-6379}:6379
@@ -47,6 +49,7 @@ services:
   # =============================
   xolo:
     image: ${XOLO_IMAGE:-nachocode/xolo:api-0.0.11a0}
+    profiles: [staging,local]
     env_file:
       - ./.xolo.env.dev
     # Open ports only for development, not in production
@@ -75,6 +78,7 @@ services:
   # =============================
   jub-db:
     image: mongo:8-noble
+    profiles: [staging,local]
     volumes:
       - jub-db:/data/db
       - ./db/mongod.conf:/etc/mongo/mongod.conf
@@ -94,6 +98,7 @@ services:
     
   jub:
     image: nachocode/jub:api-0.0.1a2-nightly
+    profiles: [staging,local]
     env_file:
       - .jub.env.dev
     networks:
@@ -116,6 +121,7 @@ services:
   # =============================
   jubui:
     image: ${JUB_UI_IMAGE:-jub:ui-0.0.1a2-nightly}
+    profiles: [staging]
     build:
       context: .
       dockerfile: Dockerfile.dev
