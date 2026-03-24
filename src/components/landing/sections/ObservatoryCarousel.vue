@@ -1,8 +1,8 @@
 <template>
-  <v-sheet color="grey-lighten-4" class="py-16 px-4">
+  <v-sheet color="grey-darken-4" class="py-16 px-4">
     <v-container class="py-16">
 
-      <h2 class="text-center text-h4 font-weight-bold text-grey-darken-4 mb-10 mt-16 ">
+      <h2 class="text-center text-h4 font-weight-bold text-white-darken-4 mb-10 mt-16 ">
         JUB: <br> Buscador de datos e información estratégica
       </h2>
       
