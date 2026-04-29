@@ -496,7 +496,11 @@ import type { DataSourceDTO } from '@/types/index.types';
 
 use([CanvasRenderer, LineChart, BarChart, PieChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent]);
 
-definePage({ name: 'Charts', meta: { layout: 'dashboard' } });
+definePage({ 
+  name: 'Charts', 
+  meta: { layout: 'dashboard',    requiresAuth: true,
+ } 
+});
 
 const jubStore = useJubStore();
 

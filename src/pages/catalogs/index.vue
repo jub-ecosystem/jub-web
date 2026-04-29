@@ -132,7 +132,7 @@ const goToCatalog = (catalog: CatalogSummaryDTO) => {
 };
 
 onMounted(() => {
-  // Only fetch if the store is empty (avoids redundant calls on back-navigation)
+  store.error = null;
   if (store.catalogs.length === 0) store.fetchCatalogs();
 });
 </script>

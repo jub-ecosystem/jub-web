@@ -97,7 +97,7 @@ services:
         condition: on-failure
     
   jub:
-    image: nachocode/jub:api-0.0.1a3-nightly
+    image: nachocode/jub:api-0.0.2
     profiles: [staging,local]
     env_file:
       - .jub.env.dev
@@ -120,7 +120,7 @@ services:
   # JUB UI 
   # =============================
   jubui:
-    image: ${JUB_UI_IMAGE:-jub:ui-0.0.1a2-nightly}
+    image: ${JUB_UI_IMAGE:-jub:ui-0.0.2}
     profiles: [staging]
     build:
       context: .

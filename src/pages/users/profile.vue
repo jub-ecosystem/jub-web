@@ -58,18 +58,29 @@
           </v-btn>
         </div>
 
-        <v-row>
-          <v-col v-for="item in popularItems" :key="item.id" cols="12" sm="6" md="4">
-            
+        <!-- Loading -->
+        <v-row v-if="loadingObs" justify="center" class="my-6">
+          <v-col cols="auto">
+            <v-progress-circular indeterminate color="primary" size="40" />
+          </v-col>
+        </v-row>
+
+        <v-row v-else>
+          <v-col v-for="obs in topObservatories" :key="obs.observatory_id" cols="12" sm="6" md="4">
             <v-hover v-slot="{ isHovering, props }">
               <v-card
                 v-bind="props"
                 :elevation="isHovering ? 8 : 2"
                 rounded="xl"
                 class="h-100 transition-swing cursor-pointer gallery-card"
-                @click="goToItem(item)"
+                @click="goToItem(obs)"
               >
-                <v-img :src="item.image" height="200" cover class="align-end">
+                <v-img
+                  :src="obs.image_url || 'https://placehold.co/600x400/eeeeee/999999?text=Observatorio'"
+                  height="200"
+                  cover
+                  class="align-end"
+                >
                   <v-overlay
                     :model-value="isHovering ?? false"
                     contained
@@ -80,38 +91,30 @@
                       Explorar
                     </v-btn>
                   </v-overlay>
-                  
+
                   <v-chip
-                    :color="item.type === 'Observatory' ? 'secondary-blue' : 'black'"
+                    color="secondary-blue"
                     size="small"
                     class="ma-3 font-weight-bold text-white position-absolute top-0 right-0"
                   >
-                    {{ item.type }}
+                    Observatorio
                   </v-chip>
                 </v-img>
 
-                <v-card-item class="pt-4">
+                <v-card-item class="pt-4 pb-1">
                   <v-card-title class="text-subtitle-1 font-weight-bold text-wrap" style="line-height: 1.2;">
-                    {{ item.title }}
+                    {{ obs.title }}
                   </v-card-title>
                 </v-card-item>
 
-                <v-card-text class="d-flex align-center pb-4 pt-0">
-                  <v-rating
-                    :model-value="item.rating"
-                    color="amber"
-                    density="compact"
-                    half-increments
-                    readonly
-                    size="small"
-                  ></v-rating>
-                  <span class="text-caption text-grey-darken-1 ml-2 font-weight-medium">
-                    {{ item.rating }} ({{ item.reviews }} reseñas)
+                <v-card-text class="d-flex align-center pb-4 pt-1">
+                  <v-icon size="16" color="grey-darken-1">mdi-eye-outline</v-icon>
+                  <span class="text-caption text-grey-darken-1 ml-1 font-weight-medium">
+                    {{ obs.view_count ?? 0 }} vistas
                   </span>
                 </v-card-text>
               </v-card>
             </v-hover>
-
           </v-col>
         </v-row>
 
@@ -121,9 +124,11 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth';
+import { useJubStore } from '@/stores/jub';
 import { useRouter } from 'vue-router';
+import type { ObservatoryDTO } from '@/types/index.types';
 
 definePage({
     name: 'UserProfile',
@@ -134,59 +139,32 @@ definePage({
 });
 
 const authStore = useAuthStore();
-const router = useRouter();
+const jubStore  = useJubStore();
+const router    = useRouter();
 
-// Usuario actual
 const currentUser = computed(() => authStore.getUser());
 
-// Computed seguro para el nombre (maneja si last_name viene vacío como en "invitado")
 const fullName = computed(() => {
   const first = currentUser.value?.first_name || '';
-  const last = currentUser.value?.last_name || '';
+  const last  = currentUser.value?.last_name  || '';
   return `${first} ${last}`.trim() || 'Usuario Desconocido';
 });
 
-// Mock Data para la Galería (Reemplazar con llamada real a tu API de productos/observatorios)
-const popularItems = ref([
-  { 
-    id: 1, 
-    title: 'Observatorio de Salud Pública', 
-    type: 'Observatory', 
-    image: 'https://images.unsplash.com/photo-1576091160550-2173ff9e5ee5?q=80&w=600&auto=format&fit=crop', 
-    rating: 4.8, 
-    reviews: 124 
-  },
-  { 
-    id: 2, 
-    title: 'Análisis Demográfico Nacional 2025', 
-    type: 'Product', 
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=600&auto=format&fit=crop', 
-    rating: 4.9, 
-    reviews: 89 
-  },
-  { 
-    id: 3, 
-    title: 'Lenguaje y Cultura en México', 
-    type: 'Observatory', 
-    image: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=600&auto=format&fit=crop', 
-    rating: 4.5, 
-    reviews: 56 
-  },
-  { 
-    id: 4, 
-    title: 'Cancer de Mama: Estadísticas y Tendencias', 
-    type: 'Product', 
-    image: 'https://images.unsplash.com/photo-1581093588401-ecbfae0caa9b?q=80&w=600&auto=format&fit=crop', 
-    rating: 4.7, 
-    reviews: 210 
-  }
-]);
+const loadingObs      = ref(false);
+const topObservatories = ref<ObservatoryDTO[]>([]);
 
-// Navegación simulada
-const goToItem = (item: any) => {
-  console.log("Navegando a:", item.title);
-  // router.push(`/observatories/${item.id}`);
+const goToItem = (obs: ObservatoryDTO) => {
+  router.push({ name: 'ObservatoryDetails', params: { observatory_id: obs.observatory_id } });
 };
+
+onMounted(async () => {
+  loadingObs.value = true;
+  const all = await jubStore.get_observatories();
+  topObservatories.value = all
+    .sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0))
+    .slice(0, 10);
+  loadingObs.value = false;
+});
 </script>
 
 <style scoped>

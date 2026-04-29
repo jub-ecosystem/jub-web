@@ -19,7 +19,7 @@
             <v-row align="start" class="ga-0">
 
               <!-- Keyword input -->
-              <v-col cols="12" md="9">
+              <v-col cols="12" md="6">
                 <div class="d-flex align-center ga-2 mb-3">
                   <v-avatar color="primary" variant="tonal" size="28" rounded="lg">
                     <v-icon size="16">mdi-magnify</v-icon>
@@ -43,6 +43,38 @@
                   prepend-inner-icon="mdi-text-search"
                   @keyup.enter="executeSearch"
                 />
+              </v-col>
+
+              <!-- Provider filter -->
+              <v-col cols="12" md="3">
+                <div class="d-flex align-center ga-2 mb-3">
+                  <v-avatar color="deep-purple" variant="tonal" size="28" rounded="lg">
+                    <v-icon size="16">mdi-server-outline</v-icon>
+                  </v-avatar>
+                  <span class="text-subtitle-2 font-weight-bold">Proveedor</span>
+                </div>
+                <v-select
+                  v-model="form.provider"
+                  :items="providerOptions"
+                  item-title="label"
+                  item-value="value"
+                  label="Todos"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
+                  clearable
+                >
+                  <template #item="{ item, props: itemProps }">
+                    <v-list-item v-bind="itemProps">
+                      <template #prepend>
+                        <v-avatar size="20" rounded="0" class="mr-2">
+                          <v-img v-if="providerLogo[item.value as ServiceProvider]" :src="providerLogo[item.value as ServiceProvider]!" contain />
+                          <v-icon v-else size="16" color="grey">mdi-cog-outline</v-icon>
+                        </v-avatar>
+                      </template>
+                    </v-list-item>
+                  </template>
+                </v-select>
               </v-col>
 
               <!-- Visibility filter -->
@@ -90,7 +122,7 @@
                   size="small"
                   prepend-icon="mdi-refresh"
                   class="text-none"
-                  :disabled="!form.keyword && form.isPublic === null"
+                  :disabled="!form.keyword && form.isPublic === null && form.provider === null"
                   @click="resetForm"
                 >
                   Limpiar
@@ -167,18 +199,35 @@
             <!-- Top strip -->
             <div class="pa-5 pb-3" style="border-bottom: 3px solid #00ABDC;">
               <div class="d-flex align-center justify-space-between mb-3">
+                <!-- Provider logo or fallback icon -->
                 <v-avatar color="primary" variant="tonal" size="44" rounded="lg">
-                  <v-icon size="22" color="primary">mdi-cog-outline</v-icon>
+                  <v-img
+                    v-if="providerLogo[svc.provider]"
+                    :src="providerLogo[svc.provider]!"
+                    :alt="providerLabel[svc.provider]"
+                    contain
+                  />
+                  <v-icon v-else size="22" color="primary">mdi-cog-outline</v-icon>
                 </v-avatar>
-                <v-chip
-                  :color="svc.public ? 'success' : 'warning'"
-                  variant="flat"
-                  size="small"
-                  class="text-white font-weight-bold"
-                >
-                  <v-icon start size="13">{{ svc.public ? 'mdi-earth' : 'mdi-lock-outline' }}</v-icon>
-                  {{ svc.public ? 'Público' : 'Privado' }}
-                </v-chip>
+
+                <div class="d-flex align-center ga-1">
+                  <v-chip
+                    v-if="svc.provider === 'NEZ' || svc.provider === 'XELHUA'"
+                    size="x-small"
+                    variant="tonal"
+                    color="primary"
+                    class="font-weight-bold"
+                  >{{ providerLabel[svc.provider] }}</v-chip>
+                  <v-chip
+                    :color="svc.public ? 'success' : 'warning'"
+                    variant="flat"
+                    size="small"
+                    class="text-white font-weight-bold"
+                  >
+                    <v-icon start size="13">{{ svc.public ? 'mdi-earth' : 'mdi-lock-outline' }}</v-icon>
+                    {{ svc.public ? 'Público' : 'Privado' }}
+                  </v-chip>
+                </div>
               </div>
 
               <div class="text-h6 font-weight-bold mb-1">{{ svc.name }}</div>
@@ -214,7 +263,13 @@
           <v-list-item class="pa-4 cursor-pointer" @click="openDetail(svc)">
             <template #prepend>
               <v-avatar color="primary" variant="tonal" size="48" rounded="lg" class="mr-3">
-                <v-icon color="primary">mdi-cog-outline</v-icon>
+                <v-img
+                  v-if="providerLogo[svc.provider]"
+                  :src="providerLogo[svc.provider]!"
+                  :alt="providerLabel[svc.provider]"
+                  contain
+                />
+                <v-icon v-else color="primary">mdi-cog-outline</v-icon>
               </v-avatar>
             </template>
 
@@ -230,6 +285,18 @@
               <v-chip :color="svc.public ? 'success' : 'warning'" variant="flat" size="x-small" class="text-white font-weight-bold">
                 <v-icon start size="12">{{ svc.public ? 'mdi-earth' : 'mdi-lock-outline' }}</v-icon>
                 {{ svc.public ? 'Público' : 'Privado' }}
+              </v-chip>
+              <v-chip
+                v-if="svc.provider === 'NEZ' || svc.provider === 'XELHUA'"
+                size="x-small"
+                variant="tonal"
+                color="primary"
+                class="font-weight-bold"
+              >
+                <v-avatar start size="16" rounded="0" class="mr-1">
+                  <v-img :src="providerLogo[svc.provider]!" :alt="providerLabel[svc.provider]" contain />
+                </v-avatar>
+                {{ providerLabel[svc.provider] }}
               </v-chip>
               <v-chip v-if="svc.workflow" size="x-small" variant="tonal" color="primary">
                 <v-icon start size="12">mdi-transit-connection-horizontal</v-icon>
@@ -286,13 +353,27 @@
         <v-toolbar color="primary" density="comfortable">
           <template #prepend>
             <v-avatar color="white" variant="flat" size="36" rounded="lg" class="ml-2">
-              <v-icon color="primary">mdi-cog-outline</v-icon>
+              <v-img
+                v-if="providerLogo[selectedService.provider]"
+                :src="providerLogo[selectedService.provider]!"
+                :alt="providerLabel[selectedService.provider]"
+                contain
+              />
+              <v-icon v-else color="primary">mdi-cog-outline</v-icon>
             </v-avatar>
           </template>
           <v-toolbar-title class="text-subtitle-1 font-weight-bold text-white">
             {{ selectedService.name }}
           </v-toolbar-title>
           <template #append>
+            <v-chip
+              v-if="selectedService.provider === 'NEZ' || selectedService.provider === 'XELHUA'"
+              variant="flat"
+              size="small"
+              color="white"
+              class="font-weight-bold mr-1"
+              style="color: #00ABDC"
+            >{{ providerLabel[selectedService.provider] }}</v-chip>
             <v-chip
               :color="selectedService.public ? 'success' : 'warning'"
               variant="flat"
@@ -526,7 +607,9 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue';
 import { useJubStore } from '@/stores/jub';
-import type { ServiceDTO, PatternDetailDTO, BuildingBlockDetailDTO } from '@/types/index.types';
+import type { ServiceDTO, ServiceProvider, PatternDetailDTO, BuildingBlockDetailDTO } from '@/types/index.types';
+import nezLogo from '@/assets/nez.png';
+import xelhuaLogo from '@/assets/xelhua.png';
 
 definePage({
   name: 'ExternalServices',
@@ -535,24 +618,47 @@ definePage({
 
 const jubStore = useJubStore();
 
+// ── Provider ──────────────────────────────────────────────────────────────────
+const providerLogo: Record<ServiceProvider, string | null> = {
+  NEZ:      nezLogo,
+  XELHUA:   xelhuaLogo,
+  EXTERNAL: null,
+  OTHER:    null,
+};
+
+const providerLabel: Record<ServiceProvider, string> = {
+  NEZ:      'NEZ',
+  XELHUA:   'Xelhua',
+  EXTERNAL: 'Externo',
+  OTHER:    'Otro',
+};
+
 // ── Form ──────────────────────────────────────────────────────────────────────
-const form = ref({ keyword: '', isPublic: null as boolean | null });
+const form = ref({ keyword: '', isPublic: null as boolean | null, provider: null as ServiceProvider | null });
 
 const visibilityOptions = [
   { label: 'Públicos',  value: true  },
   { label: 'Privados',  value: false },
 ];
 
+const providerOptions: { label: string; value: ServiceProvider }[] = [
+  { label: 'NEZ',      value: 'NEZ'      },
+  { label: 'Xelhua',   value: 'XELHUA'   },
+  { label: 'Externo',  value: 'EXTERNAL' },
+  { label: 'Otro',     value: 'OTHER'    },
+];
+
 const computedDSL = computed(() => {
   const parts: string[] = [];
   if (form.value.keyword.trim()) parts.push(`name=${form.value.keyword.trim()}`);
   if (form.value.isPublic != null) parts.push(`public=${form.value.isPublic}`);
+  if (form.value.provider)        parts.push(`provider=${form.value.provider}`);
   const inner = parts.length > 0 ? parts.join(',') : '*';
   return `jub.v1.SVC(${inner})`;
 });
 
 function resetForm() {
-  form.value = { keyword: '', isPublic: null };
+  form.value = { keyword: '', isPublic: null, provider: null };
 }
 
 const copiedSnack = ref(false);

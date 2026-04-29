@@ -1,5 +1,5 @@
 <template>
-  <dashboard-drawer :model-value="drawer" />
+  <dashboard-drawer v-model="drawer" />
 
   <v-app-bar app color="white" elevation="0" height="72" class="px-2 border-b">
     <template v-slot:prepend>
@@ -111,11 +111,11 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useJubStore } from '@/stores/jub';
 import { type Notification } from '@/types/index.types';
-import { useAuthStore } from '@/stores/auth';
 import { getRelativeTime } from '@/utils/date';
-import { useTheme } from 'vuetify';
+import { useDisplay } from 'vuetify';
 
-const drawer = ref(true);
+const { mobile } = useDisplay();
+const drawer = ref(!mobile.value);
 const router = useRouter();
 
 const onBack = () => {
@@ -126,8 +126,6 @@ const showNotifications = ref(false);
 
 
 const jubStore = useJubStore();
-const authStore = useAuthStore();
-const theme = useTheme();
 
 const notifications = ref<Notification[]>([]);
 
@@ -195,10 +193,7 @@ const markAllAsRead = async () => {
 
 
 onMounted(async () => {
-  // Cargar notificaciones desde el store
   notifications.value = await jubStore.get_notifications();
-  const x = await jubStore.convert_theme_to_jub_format(authStore.settings?.appearance?.theme || 'jubThemeLight');
-  theme.change(x);
 });
 
 </script>

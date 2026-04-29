@@ -1,5 +1,5 @@
 import {defineStore} from 'pinia'
-import {type CatalogResponseDTO,type CatalogItemAliasDTO,type CatalogItemDTO ,type CatalogSummaryDTO, type Notification,type ObservatoryDTO,type ProductXDTO,type UserSettings, type DataSourceDTO, type DataRecord, type TaskXDTO, type TasksStatsDTO, type ServiceDTO, type CatalogItemXResponseDTO} from '@/types/index.types'
+import {type CatalogResponseDTO,type CatalogItemAliasDTO,type CatalogItemDTO ,type CatalogSummaryDTO, type Notification,type ObservatoryDTO,type ProductXDTO,type UserSettings, type DataSourceDTO, type DataRecord, type TaskXDTO, type TasksStatsDTO, type ServiceDTO, type CatalogItemXResponseDTO, type ReviewDTO} from '@/types/index.types'
 // interface Observatory
 
 
@@ -223,6 +223,7 @@ export const useJubStore = defineStore('jub', () => {
             });
             if(response.ok){
                 const data:ObservatoryDTO[] = await response.json();
+                console.log("Observatories",data)
                 return data;
             }else {
                 throw new Error(`Error searching observatories: ${response.statusText}`);
@@ -560,6 +561,63 @@ export const useJubStore = defineStore('jub', () => {
     }
   }
 
+    // ── Observatory views & reviews ───────────────────────────────────────────
+    async function incrementViews(observatoryId: string): Promise<number> {
+      try {
+        const res = await fetch(`${API_URL}/observatories/${observatoryId}/view`, {
+          method: 'POST',
+          headers: authHeaders(),
+        });
+        if (!res.ok) return 0;
+        const data = await res.json();
+        return data.view_count ?? 0;
+      } catch { return 0; }
+    }
+
+    async function getReviews(observatoryId: string): Promise<ReviewDTO[]> {
+      try {
+        const res = await fetch(`${API_URL}/observatories/${observatoryId}/reviews`, {
+          headers: authHeaders(),
+        });
+        if (!res.ok) return [];
+        return await res.json() as ReviewDTO[];
+      } catch { return []; }
+    }
+
+    async function createReview(observatoryId: string, content: string, rating: number): Promise<ReviewDTO | null> {
+      try {
+        const res = await fetch(`${API_URL}/observatories/${observatoryId}/reviews`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ content, rating }),
+        });
+        if (!res.ok) throw new Error(res.statusText);
+        return await res.json() as ReviewDTO;
+      } catch { return null; }
+    }
+
+    async function updateReview(observatoryId: string, reviewId: string, content?: string, rating?: number): Promise<ReviewDTO | null> {
+      try {
+        const res = await fetch(`${API_URL}/observatories/${observatoryId}/reviews/${reviewId}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ content, rating }),
+        });
+        if (!res.ok) throw new Error(res.statusText);
+        return await res.json() as ReviewDTO;
+      } catch { return null; }
+    }
+
+    async function deleteReview(observatoryId: string, reviewId: string): Promise<boolean> {
+      try {
+        const res = await fetch(`${API_URL}/observatories/${observatoryId}/reviews/${reviewId}`, {
+          method: 'DELETE',
+          headers: authHeaders(),
+        });
+        return res.ok || res.status === 204;
+      } catch { return false; }
+    }
+
     return {
         get_observatories,
         search,
@@ -590,7 +648,12 @@ export const useJubStore = defineStore('jub', () => {
         fetchProductTagDetails,
         downloadProduct,
         reset,
-        catalogs
+        catalogs,
+        incrementViews,
+        getReviews,
+        createReview,
+        updateReview,
+        deleteReview,
     }
 
 })

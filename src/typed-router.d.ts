@@ -36,7 +36,7 @@ declare module 'vue-router/auto-routes' {
     'IMA': RouteRecordInfo<'IMA', '/observatories/ima', Record<never, never>, Record<never, never>>,
     'Kaexla': RouteRecordInfo<'Kaexla', '/observatories/kaexla', Record<never, never>, Record<never, never>>,
     'Products': RouteRecordInfo<'Products', '/products', Record<never, never>, Record<never, never>>,
-    '/products/plot': RouteRecordInfo<'/products/plot', '/products/plot', Record<never, never>, Record<never, never>>,
+    'Charts': RouteRecordInfo<'Charts', '/products/plot', Record<never, never>, Record<never, never>>,
     'Services': RouteRecordInfo<'Services', '/services', Record<never, never>, Record<never, never>>,
     'MictlanX': RouteRecordInfo<'MictlanX', '/services/mictlanx', Record<never, never>, Record<never, never>>,
     'Nez': RouteRecordInfo<'Nez', '/services/nez', Record<never, never>, Record<never, never>>,
@@ -134,7 +134,7 @@ declare module 'vue-router/auto-routes' {
       views: never
     }
     'src/pages/products/plot.vue': {
-      routes: '/products/plot'
+      routes: 'Charts'
       views: never
     }
     'src/pages/services/index.vue': {

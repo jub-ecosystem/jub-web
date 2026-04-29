@@ -75,9 +75,20 @@ export interface ObservatoryDTO {
     description: string
     image_url: string
     metadata: Record<string, string>
+    view_count: number
     created_at: string
     updated_at: string
 };
+
+export interface ReviewDTO {
+  review_id: string
+  observatory_id: string
+  user_id: string
+  content: string
+  rating: number
+  created_at: string
+  updated_at: string
+}
 
 export interface ProductXDTO {
     product_id: string
@@ -289,12 +300,15 @@ export interface WorkflowDetailDTO {
   updated_at: string;
 }
 
+export type ServiceProvider = 'NEZ' | 'XELHUA' | 'EXTERNAL' | 'OTHER';
+
 export interface ServiceDTO {
   service_id: string;
   name: string;
   description: string;
   owner_id: string;
   public: boolean;
+  provider: ServiceProvider;
   workflow?: WorkflowDetailDTO | null;
   created_at: string;
   updated_at: string;

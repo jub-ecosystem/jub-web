@@ -523,14 +523,138 @@
       <v-icon start>mdi-check</v-icon> Consulta copiada
     </v-snackbar>
 
+    <!-- ── Reviews ── -->
+    <v-row class="mt-6 mb-2">
+      <v-col cols="12">
+        <v-card rounded="xl" elevation="2" class="border">
+          <v-card-text class="pa-5 pb-3 d-flex align-center justify-space-between flex-wrap ga-2">
+            <div class="d-flex align-center ga-3">
+              <v-icon color="amber-darken-1" size="24">mdi-star</v-icon>
+              <span class="text-h6 font-weight-bold">Reseñas</span>
+              <v-chip v-if="reviews.length" size="small" color="amber" variant="tonal" class="font-weight-bold">
+                {{ avgRating.toFixed(1) }} ★ &nbsp;·&nbsp; {{ reviews.length }}
+              </v-chip>
+              <span v-else class="text-body-2 text-grey-darken-1">(sin reseñas aún)</span>
+            </div>
+            <v-btn
+              v-if="!myReview"
+              color="primary"
+              variant="tonal"
+              size="small"
+              prepend-icon="mdi-pencil-outline"
+              class="text-none"
+              @click="openReviewDialog()"
+            >Escribir reseña</v-btn>
+          </v-card-text>
+
+          <v-divider />
+
+          <v-list v-if="reviews.length" lines="two" class="pa-2">
+            <template v-for="(review, i) in reviews" :key="review.review_id">
+              <v-list-item class="rounded-lg px-4 py-3">
+                <template #prepend>
+                  <v-avatar color="primary" variant="tonal" size="40" class="mr-3">
+                    <v-icon>mdi-account-outline</v-icon>
+                  </v-avatar>
+                </template>
+
+                <v-list-item-title class="d-flex align-center ga-2 mb-1 flex-wrap">
+                  <v-rating :model-value="review.rating" color="amber" density="compact" size="small" readonly half-increments />
+                  <span class="text-caption text-grey-darken-1">{{ getRelativeTime(review.created_at) }}</span>
+                  <v-chip v-if="review.user_id === currentUserId" size="x-small" color="primary" variant="tonal">Tú</v-chip>
+                </v-list-item-title>
+
+                <v-list-item-subtitle class="text-body-2 text-grey-darken-2" style="white-space: normal;">
+                  {{ review.content }}
+                </v-list-item-subtitle>
+
+                <template v-if="review.user_id === currentUserId" #append>
+                  <div class="d-flex ga-1">
+                    <v-btn icon="mdi-pencil-outline" size="x-small" variant="text" color="grey-darken-1" @click="openReviewDialog(review)" />
+                    <v-btn icon="mdi-delete-outline" size="x-small" variant="text" color="error" @click="confirmDeleteReview(review)" />
+                  </div>
+                </template>
+              </v-list-item>
+              <v-divider v-if="i < reviews.length - 1" inset class="my-1" />
+            </template>
+          </v-list>
+
+          <div v-else class="pa-8 text-center">
+            <v-icon size="48" color="grey-lighten-2" class="mb-2">mdi-star-outline</v-icon>
+            <p class="text-body-2 text-grey-darken-1">Sé el primero en dejar una reseña sobre este observatorio.</p>
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Review create/edit dialog -->
+    <v-dialog v-model="reviewDialog" max-width="480" persistent>
+      <v-card rounded="xl">
+        <v-toolbar color="primary" density="comfortable">
+          <v-toolbar-title class="text-subtitle-1 font-weight-bold text-white">
+            {{ editingReview ? 'Editar reseña' : 'Nueva reseña' }}
+          </v-toolbar-title>
+          <template #append>
+            <v-btn icon="mdi-close" variant="text" color="white" @click="reviewDialog = false" />
+          </template>
+        </v-toolbar>
+        <v-card-text class="pa-6">
+          <div class="text-center mb-5">
+            <p class="text-subtitle-2 font-weight-bold mb-2">Calificación</p>
+            <v-rating v-model="reviewForm.rating" color="amber" hover size="x-large" />
+          </div>
+          <v-textarea
+            v-model="reviewForm.content"
+            label="Comentario"
+            variant="outlined"
+            rows="4"
+            maxlength="500"
+            counter
+            hide-details="auto"
+          />
+        </v-card-text>
+        <v-card-actions class="px-6 pb-5 pt-0">
+          <v-spacer />
+          <v-btn variant="text" color="grey-darken-1" class="text-none" @click="reviewDialog = false">Cancelar</v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            rounded="pill"
+            class="px-6 text-none font-weight-bold"
+            :loading="savingReview"
+            :disabled="!reviewForm.rating || !reviewForm.content.trim()"
+            @click="saveReview"
+          >{{ editingReview ? 'Actualizar' : 'Publicar' }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Delete confirm dialog -->
+    <v-dialog v-model="deleteDialog" max-width="380">
+      <v-card rounded="xl">
+        <v-card-text class="pa-6 text-center">
+          <v-icon size="48" color="error" class="mb-3">mdi-delete-outline</v-icon>
+          <p class="text-subtitle-1 font-weight-bold mb-1">¿Eliminar reseña?</p>
+          <p class="text-body-2 text-grey-darken-1">Esta acción no se puede deshacer.</p>
+        </v-card-text>
+        <v-card-actions class="px-6 pb-5 pt-0">
+          <v-spacer />
+          <v-btn variant="text" class="text-none" @click="deleteDialog = false">Cancelar</v-btn>
+          <v-btn color="error" variant="flat" rounded="pill" class="px-6 text-none" :loading="deletingReview" @click="doDeleteReview">Eliminar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
   </v-container>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed, reactive, onMounted } from 'vue';
-import { type ProductXDTO, type CatalogItemXResponseDTO } from '@/types/index.types';
+import { type ProductXDTO, type CatalogItemXResponseDTO, type ReviewDTO } from '@/types/index.types';
 import { useJubStore } from '@/stores/jub';
 import { useAppStore, SnackbarColor } from '@/stores/app';
+import { useAuthStore } from '@/stores/auth';
+import { getRelativeTime } from '@/utils/date';
 import { useRoute } from 'vue-router';
 
 definePage({
@@ -542,9 +666,11 @@ definePage({
   },
 });
 
-const route    = useRoute('ObservatoryDetails');
-const jubStore = useJubStore();
-const appStore = useAppStore();
+const route      = useRoute('ObservatoryDetails');
+const jubStore   = useJubStore();
+const appStore   = useAppStore();
+const authStore  = useAuthStore();
+const currentUserId = computed(() => authStore.getUser()?.user_id ?? '');
 
 // ── Form state ────────────────────────────────────────────────────────────────
 const loadingItems = ref(false);
@@ -684,8 +810,87 @@ const handleCreateTask = () => {
   showCreateDialog.value = false;
 };
 
+// ── Reviews ───────────────────────────────────────────────────────────────────
+const obsId = computed(() => route.params.observatory_id as string);
+
+const reviews       = ref<ReviewDTO[]>([]);
+const reviewDialog  = ref(false);
+const deleteDialog  = ref(false);
+const savingReview  = ref(false);
+const deletingReview = ref(false);
+const editingReview = ref<ReviewDTO | null>(null);
+const pendingDelete = ref<ReviewDTO | null>(null);
+const reviewForm    = ref({ rating: 0, content: '' });
+
+const avgRating = computed(() => {
+  if (!reviews.value.length) return 0;
+  return reviews.value.reduce((s, r) => s + r.rating, 0) / reviews.value.length;
+});
+
+const myReview = computed(() => reviews.value.find(r => r.user_id === currentUserId.value) ?? null);
+
+async function loadReviews() {
+  reviews.value = await jubStore.getReviews(obsId.value);
+}
+
+function openReviewDialog(review?: ReviewDTO) {
+  editingReview.value = review ?? null;
+  reviewForm.value    = review ? { rating: review.rating, content: review.content } : { rating: 0, content: '' };
+  reviewDialog.value  = true;
+}
+
+async function saveReview() {
+  savingReview.value = true;
+  try {
+    if (editingReview.value) {
+      const updated = await jubStore.updateReview(obsId.value, editingReview.value.review_id, reviewForm.value.content, reviewForm.value.rating);
+      if (updated) {
+        const idx = reviews.value.findIndex(r => r.review_id === editingReview.value!.review_id);
+        if (idx !== -1) reviews.value[idx] = updated;
+        appStore.showSnackbar('Reseña actualizada', 2500, SnackbarColor.SUCCESS);
+      } else {
+        appStore.showSnackbar('Error al actualizar la reseña', 3000, SnackbarColor.ERROR);
+      }
+    } else {
+      const created = await jubStore.createReview(obsId.value, reviewForm.value.content, reviewForm.value.rating);
+      if (created) {
+        reviews.value.unshift(created);
+        appStore.showSnackbar('Reseña publicada', 2500, SnackbarColor.SUCCESS);
+      } else {
+        appStore.showSnackbar('Error al publicar la reseña', 3000, SnackbarColor.ERROR);
+      }
+    }
+    reviewDialog.value = false;
+  } finally {
+    savingReview.value = false;
+  }
+}
+
+function confirmDeleteReview(review: ReviewDTO) {
+  pendingDelete.value = review;
+  deleteDialog.value  = true;
+}
+
+async function doDeleteReview() {
+  if (!pendingDelete.value) return;
+  deletingReview.value = true;
+  const ok = await jubStore.deleteReview(obsId.value, pendingDelete.value.review_id);
+  if (ok) {
+    reviews.value = reviews.value.filter(r => r.review_id !== pendingDelete.value!.review_id);
+    appStore.showSnackbar('Reseña eliminada', 2500, SnackbarColor.SUCCESS);
+  } else {
+    appStore.showSnackbar('Error al eliminar la reseña', 3000, SnackbarColor.ERROR);
+  }
+  deletingReview.value = false;
+  deleteDialog.value   = false;
+  pendingDelete.value  = null;
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 onMounted(async () => {
+  jubStore.incrementViews(obsId.value);
+  loadReviews();
+
   loadingItems.value = true;
   const [VS, VT, VI] = await Promise.all([
     jubStore.fetchCatalogItemsByType('SPATIAL'),

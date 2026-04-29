@@ -1,5 +1,5 @@
 <template>
-  <v-navigation-drawer app permanent v-model="drawerModel" rail>
+  <v-navigation-drawer app v-model="drawerModel" :permanent="!mobile" :rail="!mobile" :temporary="mobile">
     <v-list>
       <v-list-item class="cursor-pointer"
         :prepend-avatar="`https://api.dicebear.com/9.x/bottts/svg?seed=${currentUser?.fullname}`"
@@ -13,25 +13,61 @@
 
     <v-divider></v-divider>
 
-    <v-list density="compact" nav>
-      <v-list-item prepend-icon="mdi-telescope" title="Observatorios" value="observatories"
-        :to="{ name: 'Dashboard' }" />
-      <v-list-item prepend-icon="mdi-book-open-variant-outline" title="Catálogos" value="catalogs"
-        :to="{ name: 'Catalogs' }" />
-      <v-list-item prepend-icon="mdi-api" title="Servicios" value="services"
-        :to="{ name: 'ExternalServices' }" />
-      <v-list-item prepend-icon="mdi-database-outline" title="Fuentes de datos" value="datasources"
-        :to="{ name: 'DataSources' }" />
-      <v-list-item prepend-icon="mdi-chart-bar" title="Generador de gráficas" value="charts"
-        :to="{ name: 'Charts' }" />
-      <v-list-item prepend-icon="mdi-clipboard-list-outline" title="Tareas" value="tasks"
-        :to="{ name: 'TasksIndex' }" />
-      <v-list-item prepend-icon="mdi-help-circle-outline" title="Guía de búsqueda" value="query-guide"
-        :to="{ name: 'QueryGuide' }" />
-      <v-list-item prepend-icon="mdi-cog-outline" title="Configuración" value="settings"
-        :to="{ name: 'Settings' }" />
-      <v-list-item prepend-icon="mdi-logout" title="Cerrar sesión" value="logout"
-        @click="logout" />
+    <v-list density="compact" nav @click.capture="closeOnMobile">
+      <v-tooltip location="end" text="Observatorios" :disabled="mobile">
+        <template #activator="{ props: tip }">
+          <v-list-item v-bind="tip" prepend-icon="mdi-telescope" title="Observatorios" value="observatories"
+            :to="{ name: 'Dashboard' }" />
+        </template>
+      </v-tooltip>
+      <v-tooltip location="end" text="Catálogos" :disabled="mobile">
+        <template #activator="{ props: tip }">
+          <v-list-item v-bind="tip" prepend-icon="mdi-book-open-variant-outline" title="Catálogos" value="catalogs"
+            :to="{ name: 'Catalogs' }" />
+        </template>
+      </v-tooltip>
+      <v-tooltip location="end" text="Servicios" :disabled="mobile">
+        <template #activator="{ props: tip }">
+          <v-list-item v-bind="tip" prepend-icon="mdi-api" title="Servicios" value="services"
+            :to="{ name: 'ExternalServices' }" />
+        </template>
+      </v-tooltip>
+      <v-tooltip location="end" text="Fuentes de datos" :disabled="mobile">
+        <template #activator="{ props: tip }">
+          <v-list-item v-bind="tip" prepend-icon="mdi-database-outline" title="Fuentes de datos" value="datasources"
+            :to="{ name: 'DataSources' }" />
+        </template>
+      </v-tooltip>
+      <v-tooltip location="end" text="Generador de gráficas" :disabled="mobile">
+        <template #activator="{ props: tip }">
+          <v-list-item v-bind="tip" prepend-icon="mdi-chart-bar" title="Generador de gráficas" value="charts"
+            :to="{ name: 'Charts' }" />
+        </template>
+      </v-tooltip>
+      <v-tooltip location="end" text="Tareas" :disabled="mobile">
+        <template #activator="{ props: tip }">
+          <v-list-item v-bind="tip" prepend-icon="mdi-clipboard-list-outline" title="Tareas" value="tasks"
+            :to="{ name: 'TasksIndex' }" />
+        </template>
+      </v-tooltip>
+      <v-tooltip location="end" text="Guía de búsqueda" :disabled="mobile">
+        <template #activator="{ props: tip }">
+          <v-list-item v-bind="tip" prepend-icon="mdi-help-circle-outline" title="Guía de búsqueda" value="query-guide"
+            :to="{ name: 'QueryGuide' }" />
+        </template>
+      </v-tooltip>
+      <v-tooltip location="end" text="Configuración" :disabled="mobile">
+        <template #activator="{ props: tip }">
+          <v-list-item v-bind="tip" prepend-icon="mdi-cog-outline" title="Configuración" value="settings"
+            :to="{ name: 'Settings' }" />
+        </template>
+      </v-tooltip>
+      <v-tooltip location="end" text="Cerrar sesión" :disabled="mobile">
+        <template #activator="{ props: tip }">
+          <v-list-item v-bind="tip" prepend-icon="mdi-logout" title="Cerrar sesión" value="logout"
+            @click="logout" />
+        </template>
+      </v-tooltip>
     </v-list>
   </v-navigation-drawer>
 </template>
@@ -39,6 +75,9 @@
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore,SnackbarColor } from '@/stores/app';
+import { useDisplay } from 'vuetify';
+
+const { mobile } = useDisplay();
 // const drawer = ref(true)
 const router = useRouter()
 const authStore = useAuthStore();
@@ -63,6 +102,10 @@ const drawerModel = computed({
   }
 });
 
+
+function closeOnMobile() {
+  if (mobile.value) drawerModel.value = false;
+}
 
 const logout = async () => {
   try {

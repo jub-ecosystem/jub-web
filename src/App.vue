@@ -2,11 +2,11 @@
   <v-app>
     <router-view />
     <auth-dialog />
-    <v-snackbar 
+    <v-snackbar
       v-model="appStore.snackbarVisible"
-      :color="appStore.snackbarColor" 
-      location="bottom center" 
-      timeout="-1" 
+      :color="appStore.snackbarColor"
+      location="bottom center"
+      timeout="-1"
       >
       <div class="d-flex align-center">
       <v-icon start :icon="appStore.snackbarIcon" class="mr-3"></v-icon>
@@ -16,12 +16,12 @@
     </div>
   </div>
       <template v-slot:actions>
-        <v-btn 
+        <v-btn
           class="px-3"
-          density="comfortable" 
-          rounded="lg" 
-          text="Got it!" 
-          variant="tonal" 
+          density="comfortable"
+          rounded="lg"
+          text="Got it!"
+          variant="tonal"
           @click="appStore.snackbarVisible=false"
         />
       </template>
@@ -37,12 +37,26 @@
 </template>
 
 <script lang="ts" setup>
-import { useAppStore } from '@/stores/app';
+import { watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { useTheme } from 'vuetify'
+import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 
-const appStore = useAppStore();
-// const snackbarVisible = computed(() => appStore.isSnackbarVisible());
-// const snackbarMessage = computed(() => appStore.getSnackbarMessage());
-// const snackbarColor = computed(() => appStore.getSnackbarColor());
+const appStore = useAppStore()
+const authStore = useAuthStore()
+const route = useRoute()
+const vuetifyTheme = useTheme()
 
-//
+watch(
+  () => [route.meta.requiresAuth, authStore.settings?.appearance?.theme] as const,
+  ([requiresAuth, theme]) => {
+    if (!requiresAuth) {
+      vuetifyTheme.change('jubThemeLight')
+    } else {
+      vuetifyTheme.change(theme === 'dark' ? 'jubThemeDark' : 'jubThemeLight')
+    }
+  },
+  { immediate: true }
+)
 </script>

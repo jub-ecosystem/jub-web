@@ -30,8 +30,8 @@
 
     <v-card class="px-4 pb-4 d-flex justify-space-between align-center">
       <div class="text-left">
-        <div class="text-caption font-weight-bold text-grey-darken-1" style="line-height: 1;">GRÁFICAS</div>
-        <div class="text-h5 font-weight-bold">0 +</div>
+        <div class="text-caption font-weight-bold text-grey-darken-1" style="line-height: 1;">VISTAS</div>
+        <div class="text-h5 font-weight-bold">{{ observatory.view_count ?? 0 }}</div>
       </div>
 
       <v-btn @click="$emit('show-details', observatory)" color="secondary-blue" rounded="lg" size="large"

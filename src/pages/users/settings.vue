@@ -297,13 +297,9 @@ const settings = ref<UserSettings>({
   // exportFormat: authStore.settings?.export?.format || 'json'
 // })
 
-const toggleTheme = async (newTheme: string) => {
-  // const theme = await jubStore.convert_theme_to_jub_format(newTheme)
-  // console.log("Toggling theme to:", theme)
+const toggleTheme = (newTheme: string) => {
   if (newTheme) {
-    const x = await jubStore.convert_theme_to_jub_format(newTheme)
-    vuetifyTheme.change(x) 
-    // vuetifyTheme.global.name.value = newTheme
+    vuetifyTheme.change(newTheme === 'dark' ? 'jubThemeDark' : 'jubThemeLight')
   }
 }
 
@@ -327,7 +323,8 @@ const saveSettings = async () => {
   // }
   console.log("Saving settings for user:", authStore.user?.user_id, settings.value)
   const response = await jubStore.update_settings(authStore.user?.user_id || '', settings.value)
-  
+  authStore.settings = { ...settings.value }
+
   setTimeout(() => {
     isSaving.value = false
     showSnackbar.value = true
@@ -337,8 +334,6 @@ const saveSettings = async () => {
 onMounted(async () => {
   console.log("Loading settings for user:", authStore.user?.user_id)
   settings.value = await jubStore.get_settings(authStore.user?.user_id || '')
-  await toggleTheme(settings.value.appearance.theme)
-  // settings.value.theme = vuetifyTheme.global.name.value
-  
+  authStore.settings = { ...settings.value }
 })
 </script>
