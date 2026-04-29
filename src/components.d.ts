@@ -11,6 +11,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ArchitectureSection: typeof import('./components/landing/sections/ArchitectureSection.vue')['default']
     AuthDialog: typeof import('./components/AuthDialog.vue')['default']
     ContactCard: typeof import('./components/contact/ContactCard.vue')['default']
     ContactDialog: typeof import('./components/contact/ContactDialog.vue')['default']
@@ -18,12 +19,15 @@ declare module 'vue' {
     DashboardDrawer: typeof import('./components/DashboardDrawer.vue')['default']
     HeroSection: typeof import('./components/landing/sections/HeroSection.vue')['default']
     HowItWorksSection: typeof import('./components/landing/sections/HowItWorksSection.vue')['default']
+    IntroductionSection: typeof import('./components/landing/sections/IntroductionSection.vue')['default']
     LandingFooter: typeof import('./components/landing/sections/LandingFooter.vue')['default']
+    LogicMapSection: typeof import('./components/landing/sections/LogicMapSection.vue')['default']
     ObservatoryCard: typeof import('./components/dashboard/ObservatoryCard.vue')['default']
     ObservatoryCarousel: typeof import('./components/landing/sections/ObservatoryCarousel.vue')['default']
     ObservatoryCarouselCard: typeof import('./components/landing/sections/ObservatoryCarouselCard.vue')['default']
     ObservatoryDialog: typeof import('./components/dashboard/ObservatoryDialog.vue')['default']
     ObservatoryTables: typeof import('./components/dashboard/ObservatoryTables.vue')['default']
+    ReadyToGetStartedSection: typeof import('./components/landing/sections/ReadyToGetStartedSection.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Separator: typeof import('./components/Separator.vue')['default']

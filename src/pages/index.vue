@@ -16,25 +16,57 @@
 <template >
   <HeroSection />
 
-   <Separator :size="20"/>
-
-  <ObservatoryCarousel/>
-
+  <Separator :size="20"/>
+  
+  <IntroductionSection/>
+  
+  <Separator :size="20"/>
+  
+  <LogicMapSection/>
+  
+  <Separator :size="20"/>
+  
   <ValueProposition/>
   
+  <Separator :size="20"/>
+
   <StatsSection />
   
+  <Separator :size="20"/>
+  
   <HowItWorksSection />
+
+  <Separator :size="20"/>
+  <ArchitectureSection/>
+
+  <Separator :size="20"/>
+
+  <ObservatoryCarousel/> 
+
+  <Separator :size="20"/>
+  <ReadyToGetStartedSection />
+  
   <LandingFooter />
 
   
 </template>
 
 <style>
+.arch-section {
+  /* Set the image as the background */
+  background-image: url('@/assets/arch.svg');
+  /* 'cover' makes it fill the entire sheet, 'contain' makes it fit without cropping */
+  background-size: contain; 
+  background-position: center;
+  background-repeat: no-repeat;
+  
+  /* Optional: Set a minimum height so the section is always big enough */
+  min-height:1000px; 
+}
 
 </style>
 
-  
+
 <script setup lang="ts">
 
 import HeroSection from '@/components/landing/sections/HeroSection.vue';

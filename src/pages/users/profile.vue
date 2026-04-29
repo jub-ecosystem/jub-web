@@ -33,7 +33,7 @@
 
               <div class="d-flex justify-center ga-3 mb-6">
                 <v-chip color="primary" variant="flat" prepend-icon="mdi-shield-account" class="font-weight-bold text-uppercase">
-                  {{ currentUser?.role || 'User' }}
+                  {{ 'User' }}
                 </v-chip>
                 <v-chip color="grey-darken-3" variant="tonal" prepend-icon="mdi-email-outline">
                   {{ currentUser?.email || 'No email' }}

@@ -23,6 +23,12 @@ declare module 'vue-router/auto-routes' {
     'CatalogDetails': RouteRecordInfo<'CatalogDetails', '/catalogs/:catalogId', { catalogId: ParamValue<true> }, { catalogId: ParamValue<false> }>,
     'Contact': RouteRecordInfo<'Contact', '/contact', Record<never, never>, Record<never, never>>,
     'Dashboard': RouteRecordInfo<'Dashboard', '/dashboard', Record<never, never>, Record<never, never>>,
+    'DataSources': RouteRecordInfo<'DataSources', '/datasources', Record<never, never>, Record<never, never>>,
+    'DataSourceDetail': RouteRecordInfo<'DataSourceDetail', '/datasources/:sourceId', { sourceId: ParamValue<true> }, { sourceId: ParamValue<false> }>,
+    'ExternalIndex': RouteRecordInfo<'ExternalIndex', '/external', Record<never, never>, Record<never, never>>,
+    'ExternalServices': RouteRecordInfo<'ExternalServices', '/external/services', Record<never, never>, Record<never, never>>,
+    'Guides': RouteRecordInfo<'Guides', '/guides', Record<never, never>, Record<never, never>>,
+    'QueryGuide': RouteRecordInfo<'QueryGuide', '/guides/query', Record<never, never>, Record<never, never>>,
     'Observatories': RouteRecordInfo<'Observatories', '/observatories', Record<never, never>, Record<never, never>>,
     'ObservatoryDetails': RouteRecordInfo<'ObservatoryDetails', '/observatories/:observatory_id', { observatory_id: ParamValue<true> }, { observatory_id: ParamValue<false> }>,
     'Alerta': RouteRecordInfo<'Alerta', '/observatories/alerta', Record<never, never>, Record<never, never>>,
@@ -30,6 +36,7 @@ declare module 'vue-router/auto-routes' {
     'IMA': RouteRecordInfo<'IMA', '/observatories/ima', Record<never, never>, Record<never, never>>,
     'Kaexla': RouteRecordInfo<'Kaexla', '/observatories/kaexla', Record<never, never>, Record<never, never>>,
     'Products': RouteRecordInfo<'Products', '/products', Record<never, never>, Record<never, never>>,
+    '/products/plot': RouteRecordInfo<'/products/plot', '/products/plot', Record<never, never>, Record<never, never>>,
     'Services': RouteRecordInfo<'Services', '/services', Record<never, never>, Record<never, never>>,
     'MictlanX': RouteRecordInfo<'MictlanX', '/services/mictlanx', Record<never, never>, Record<never, never>>,
     'Nez': RouteRecordInfo<'Nez', '/services/nez', Record<never, never>, Record<never, never>>,
@@ -37,6 +44,7 @@ declare module 'vue-router/auto-routes' {
     'Signin': RouteRecordInfo<'Signin', '/signin', Record<never, never>, Record<never, never>>,
     'TasksIndex': RouteRecordInfo<'TasksIndex', '/tasks', Record<never, never>, Record<never, never>>,
     'TaskDetails': RouteRecordInfo<'TaskDetails', '/tasks/:taskId', { taskId: ParamValue<true> }, { taskId: ParamValue<false> }>,
+    '/test': RouteRecordInfo<'/test', '/test', Record<never, never>, Record<never, never>>,
     'UsersIndex': RouteRecordInfo<'UsersIndex', '/users', Record<never, never>, Record<never, never>>,
     'UserProfile': RouteRecordInfo<'UserProfile', '/users/profile', Record<never, never>, Record<never, never>>,
     'Settings': RouteRecordInfo<'Settings', '/users/settings', Record<never, never>, Record<never, never>>,
@@ -73,6 +81,30 @@ declare module 'vue-router/auto-routes' {
       routes: 'Dashboard'
       views: never
     }
+    'src/pages/datasources/index.vue': {
+      routes: 'DataSources'
+      views: never
+    }
+    'src/pages/datasources/[sourceId].vue': {
+      routes: 'DataSourceDetail'
+      views: never
+    }
+    'src/pages/external/index.vue': {
+      routes: 'ExternalIndex'
+      views: never
+    }
+    'src/pages/external/services.vue': {
+      routes: 'ExternalServices'
+      views: never
+    }
+    'src/pages/guides/index.vue': {
+      routes: 'Guides'
+      views: never
+    }
+    'src/pages/guides/query.vue': {
+      routes: 'QueryGuide'
+      views: never
+    }
     'src/pages/observatories/index.vue': {
       routes: 'Observatories'
       views: never
@@ -101,6 +133,10 @@ declare module 'vue-router/auto-routes' {
       routes: 'Products'
       views: never
     }
+    'src/pages/products/plot.vue': {
+      routes: '/products/plot'
+      views: never
+    }
     'src/pages/services/index.vue': {
       routes: 'Services'
       views: never
@@ -127,6 +163,10 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/tasks/[taskId].vue': {
       routes: 'TaskDetails'
+      views: never
+    }
+    'src/pages/test.vue': {
+      routes: '/test'
       views: never
     }
     'src/pages/users/index.vue': {

@@ -9,6 +9,60 @@
     <v-row>
       <v-col cols="12">
         <v-card rounded="xl" elevation="2" class="pa-2">
+          <v-card-title>
+            <v-icon start color="primary" class="mr-2">mdi-cog-outline</v-icon>
+            General
+          </v-card-title>
+          <v-list lines="two" bg-color="transparent">
+            <v-list-item>
+              <template v-slot:prepend>
+                <v-icon color="grey-darken-2">mdi-account-circle-outline</v-icon>
+              </template>
+              <v-list-item-title class="font-weight-medium">Información de la cuenta</v-list-item-title>
+              <v-list-item-subtitle>Actualiza tu nombre, correo electrónico y contraseña.</v-list-item-subtitle>
+            </v-list-item>
+
+            <v-divider inset></v-divider>
+
+            <v-list-item>
+              <template v-slot:prepend>
+                <v-icon color="grey-darken-2">mdi-bell-outline</v-icon>
+              </template>
+              <v-list-item-title class="font-weight-medium">Notificaciones</v-list-item-title>
+              <v-list-item-subtitle>Configura tus preferencias de notificación.</v-list-item-subtitle>
+            </v-list-item>
+            <v-divider inset></v-divider>
+            <v-list-item disabled>
+              <template v-slot:prepend>
+                <v-icon color="grey-darken-2">mdi-shield-lock-outline</v-icon>
+              </template>
+              <v-list-item-title class="font-weight-medium">Seguridad y privacidad</v-list-item-title>
+              <v-list-item-subtitle>Gestiona tus opciones de seguridad y privacidad.</v-list-item-subtitle>
+            </v-list-item>
+            <v-list-item>
+              <template v-slot:prepend>
+                <v-icon color="grey-darken-2">mdi-school-outline</v-icon>
+              </template>
+              <v-list-item-title class="font-weight-medium">Tutorial</v-list-item-title>
+              <v-list-item-subtitle>Aprende a utilizar todas las funcionalidades de la aplicación.</v-list-item-subtitle>
+              <template v-slot:append>
+                  <v-switch v-model="settings.exploration.enable_tutorial" color="primary" hide-details inset></v-switch>
+
+              </template>
+            </v-list-item>
+            <!-- <v-list-item disabled>
+              <template v-slot:prepend>
+                <v-icon color="grey-darken-2">mdi-cloud-sync-outline</v-icon>
+              </template>
+              <v-list-item-title class="font-weight-medium">Integraciones</v-list-item-title>
+              <v-list-item-subtitle>Conecta con servicios externos y aplicaciones.</v-list-item-subtitle>
+            </v-list-item> -->
+
+          </v-list>
+        </v-card>
+      </v-col>
+      <v-col cols="12">
+        <v-card rounded="xl" elevation="2" class="pa-2">
           <v-card-title class="d-flex align-center font-weight-bold px-4 pt-4">
             <v-icon start color="primary" class="mr-2">mdi-palette-outline</v-icon>
             Apariencia
@@ -24,7 +78,7 @@
               
               <template v-slot:append>
                 <v-btn-toggle
-                  v-model="settings.theme"
+                  v-model="settings.appearance.theme"
                   color="primary"
                   variant="outlined"
                   divided
@@ -32,10 +86,10 @@
                   density="comfortable"
                   @update:model-value="toggleTheme"
                 >
-                  <v-btn value="jubThemeLight" class="text-none">
+                  <v-btn value="light" class="text-none">
                     <v-icon start>mdi-white-balance-sunny</v-icon> Claro
                   </v-btn>
-                  <v-btn value="jubThemeDark" class="text-none">
+                  <v-btn value="dark" class="text-none">
                     <v-icon start>mdi-weather-night</v-icon> Oscuro
                   </v-btn>
                 </v-btn-toggle>
@@ -46,15 +100,38 @@
 
             <v-list-item>
               <template v-slot:prepend>
+                <v-icon color="grey-darken-2" class="mt-2">mdi-format-font-size</v-icon>
+              </template>
+              <v-list-item-title class="font-weight-medium">Tamaño de Fuente</v-list-item-title>
+              <v-list-item-subtitle>Incrementa o disminuye el tamaño de la fuente.</v-list-item-subtitle>
+                <template v-slot:append>
+                <div style="width: 120px;">
+                  <v-select
+                    v-model="settings.appearance.font_size"
+                    :items="[8, 10, 12, 14, 16]"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                    rounded="lg"
+                  ></v-select>
+                </div>
+              </template>
+            </v-list-item>
+            <v-divider inset></v-divider>
+            <v-list-item>
+              <template v-slot:prepend>
                 <v-icon color="grey-darken-2" class="mt-2">mdi-animation-outline</v-icon>
               </template>
               <v-list-item-title class="font-weight-medium">Reducir animaciones</v-list-item-title>
               <v-list-item-subtitle>Mejora el rendimiento en equipos con menos recursos.</v-list-item-subtitle>
               
               <template v-slot:append>
-                <v-switch v-model="settings.reduceAnimations" color="primary" hide-details inset></v-switch>
+                <v-switch v-model="settings.appearance.reduce_animations" color="primary" hide-details inset></v-switch>
               </template>
             </v-list-item>
+
+
+
           </v-list>
         </v-card>
       </v-col>
@@ -63,7 +140,7 @@
         <v-card rounded="xl" elevation="2" class="pa-2">
           <v-card-title class="d-flex align-center font-weight-bold px-4 pt-4">
             <v-icon start color="secondary-blue" class="mr-2">mdi-view-dashboard-outline</v-icon>
-            Exploración de Datos
+            Exploración de datos
           </v-card-title>
           
           <v-list lines="two" bg-color="transparent">
@@ -77,7 +154,7 @@
               <template v-slot:append>
                 <div style="width: 120px;">
                   <v-select
-                    v-model="settings.itemsPerPage"
+                    v-model="settings.exploration.items_per_page"
                     :items="[12, 24, 48, 100]"
                     variant="outlined"
                     density="compact"
@@ -100,8 +177,8 @@
               <template v-slot:append>
                 <div style="width: 150px;">
                   <v-select
-                    v-model="settings.defaultView"
-                    :items="[{ title: 'Cuadrícula', value: 'grid' }, { title: 'Tabla', value: 'table' }]"
+                    v-model="settings.exploration.default_view"
+                    :items="[{ title: 'Cuadrícula', value: 'grid' }, { title: 'Tabla', value: 'list' }]"
                     item-title="title"
                     item-value="value"
                     variant="outlined"
@@ -117,10 +194,11 @@
       </v-col>
 
       <v-col cols="12">
+        
         <v-card rounded="xl" elevation="2" class="pa-2">
           <v-card-title class="d-flex align-center font-weight-bold px-4 pt-4">
             <v-icon start color="teal" class="mr-2">mdi-database-export-outline</v-icon>
-            Exportación y Avanzado
+            Exportación de datos
           </v-card-title>
           
           <v-list lines="two" bg-color="transparent">
@@ -133,7 +211,7 @@
               
               <template v-slot:append>
                 <v-btn-toggle
-                  v-model="settings.exportFormat"
+                  v-model="settings.export.default_format"
                   color="teal"
                   variant="outlined"
                   divided
@@ -146,7 +224,9 @@
               </template>
             </v-list-item>
           </v-list>
+
         </v-card>
+
       </v-col>
     </v-row>
 
@@ -174,6 +254,9 @@
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue'
 import { useTheme } from 'vuetify'
+import { useAuthStore } from '@/stores/auth'
+import { useJubStore } from '@/stores/jub'
+import {type UserSettings} from '@/types/index.types'
 
 definePage({
   name: 'Settings',
@@ -183,28 +266,67 @@ definePage({
   }
 })
 
+const authStore = useAuthStore()
+const jubStore = useJubStore()
 const vuetifyTheme = useTheme()
 
-const isSaving = ref(false)
+const isSaving     = ref(false)
 const showSnackbar = ref(false)
-
-const settings = ref({
-  theme: 'jubThemeLight', // o 'jubThemeDark'
-  itemsPerPage: 24,
-  defaultView: 'grid',
-  reduceAnimations: false,
-  exportFormat: 'json'
+const settings = ref<UserSettings>({
+    appearance: {
+        theme: 'light',
+        font_size: 12,
+        reduce_animations: false
+      },
+      exploration: {
+        items_per_page: 24,
+        default_view: 'grid',
+        enable_tutorial: false
+      },
+      export: {
+        default_format: 'json',
+        include_metadata: false
+      }
 })
 
-const toggleTheme = (newTheme: string) => {
+  // theme: 'jubThemeLight', // o 'jubThemeDark'
+  // fontSize: authStore.settings?.appearance?.font_size || 12,
+  // itemsPerPage: authStore.settings?.exploration?.items_per_page || 24,
+  // defaultView: authStore.settings?.exploration?.default_view || 'grid',
+  // reduceAnimations: false,
+  // exportFormat: authStore.settings?.export?.format || 'json'
+// })
+
+const toggleTheme = async (newTheme: string) => {
+  // const theme = await jubStore.convert_theme_to_jub_format(newTheme)
+  // console.log("Toggling theme to:", theme)
   if (newTheme) {
-    vuetifyTheme.global.name.value = newTheme
+    const x = await jubStore.convert_theme_to_jub_format(newTheme)
+    vuetifyTheme.change(x) 
+    // vuetifyTheme.global.name.value = newTheme
   }
 }
 
-const saveSettings = () => {
+
+const saveSettings = async () => {
   isSaving.value = true
-  
+  // const updated_settings:UserSettings = {
+  //   appearance: {
+  //     theme: themeMapping[settings.value.theme] || 'light',
+  //     font_size: settings.value.fontSize,
+  //   },
+  //   exploration: {
+  //     items_per_page: settings.value.itemsPerPage,
+  //     default_view: settings.value.defaultView,
+  //     enable_tutorials: authStore.settings?.exploration?.enable_tutorials || false
+  //   },
+  //   export: {
+  //     format: settings.value.exportFormat,
+  //     include_metadata: authStore.settings?.export?.include_metadata || false
+  //   }
+  // }
+  console.log("Saving settings for user:", authStore.user?.user_id, settings.value)
+  const response = await jubStore.update_settings(authStore.user?.user_id || '', settings.value)
   
   setTimeout(() => {
     isSaving.value = false
@@ -212,7 +334,11 @@ const saveSettings = () => {
   }, 800)
 }
 
-onMounted(() => {
-  settings.value.theme = vuetifyTheme.global.name.value
+onMounted(async () => {
+  console.log("Loading settings for user:", authStore.user?.user_id)
+  settings.value = await jubStore.get_settings(authStore.user?.user_id || '')
+  await toggleTheme(settings.value.appearance.theme)
+  // settings.value.theme = vuetifyTheme.global.name.value
+  
 })
 </script>

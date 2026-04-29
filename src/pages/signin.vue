@@ -134,7 +134,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router'; 
-import { useAuthStore,type AuthAttemptDTO } from '@/stores/auth';
+import { useAuthStore} from '@/stores/auth';
+import { type AuthAttemptDTO } from '@/types/index.types';
 import { useAppStore,SnackbarColor } from '@/stores/app';
 
 

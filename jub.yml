@@ -48,7 +48,7 @@ services:
   # XOLO API Service
   # =============================
   xolo:
-    image: ${XOLO_IMAGE:-nachocode/xolo:api-0.0.11a0}
+    image: ${XOLO_IMAGE:-nachocode/xolo:api-0.0.11a2}
     profiles: [staging,local]
     env_file:
       - ./.xolo.env.dev
@@ -97,7 +97,7 @@ services:
         condition: on-failure
     
   jub:
-    image: nachocode/jub:api-0.0.1a2-nightly
+    image: nachocode/jub:api-0.0.1a3-nightly
     profiles: [staging,local]
     env_file:
       - .jub.env.dev

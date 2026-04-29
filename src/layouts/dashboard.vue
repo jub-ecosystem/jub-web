@@ -49,21 +49,21 @@
           </v-toolbar>
 
           <v-list lines="three" class="pa-0 overflow-y-auto" bg-color="white">
-            <template v-for="(notification, index) in notifications" :key="notification.id">
+            <template v-for="(notification, index) in notifications" :key="notification.notification_id">
               
               <v-list-item 
-                :class="{'bg-blue-lighten-5': !notification.read}" 
+                :class="{'bg-blue-lighten-5': !notification.is_read}" 
                 class="px-4 py-3 transition-swing cursor-pointer"
-                @click="markAsRead(notification.id)"
+                @click="markAsRead(notification.notification_id)"
                 hover
               >
                 <template v-slot:prepend>
-                  <v-avatar :color="notification.color" variant="tonal" size="40" class="mr-3 mt-1 align-self-start">
-                    <v-icon size="small">{{ notification.icon }}</v-icon>
+                  <v-avatar :color="getNotificationColors(notification)" variant="tonal" size="40" class="mr-3 mt-1 align-self-start">
+                    <v-icon size="small">{{ getNotificationIcons(notification) }}</v-icon>
                   </v-avatar>
                 </template>
 
-                <v-list-item-title :class="{'font-weight-bold text-grey-darken-4': !notification.read, 'font-weight-medium text-grey-darken-2': notification.read}" class="text-body-2 mb-1">
+                <v-list-item-title :class="{'font-weight-bold text-grey-darken-4': !notification.is_read, 'font-weight-medium text-grey-darken-2': notification.is_read}" class="text-body-2 mb-1">
                   {{ notification.title }}
                 </v-list-item-title>
                 
@@ -72,9 +72,9 @@
                 </v-list-item-subtitle>
                 
                 <div class="d-flex align-center mt-2">
-                  <span class="text-caption text-grey font-weight-medium">{{ notification.time }}</span>
+                  <span class="text-caption text-grey font-weight-medium">{{ getRelativeTime(notification.created_at) }}</span>
                   <v-spacer></v-spacer>
-                  <div v-if="!notification.read" style="width: 8px; height: 8px; border-radius: 50%; background-color: rgb(var(--v-theme-primary));"></div>
+                  <div v-if="!notification.is_read" style="width: 8px; height: 8px; border-radius: 50%; background-color: rgb(var(--v-theme-primary));"></div>
                 </div>
               </v-list-item>
 
@@ -109,6 +109,11 @@
 <script lang="ts" setup>
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useJubStore } from '@/stores/jub';
+import { type Notification } from '@/types/index.types';
+import { useAuthStore } from '@/stores/auth';
+import { getRelativeTime } from '@/utils/date';
+import { useTheme } from 'vuetify';
 
 const drawer = ref(true);
 const router = useRouter();
@@ -119,77 +124,83 @@ const onBack = () => {
 
 const showNotifications = ref(false);
 
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  time: string;
-  read: boolean;
-  type: 'success' | 'info' | 'warning' | 'error';
-  icon: string;
-  color: string;
-}
 
-const notifications = ref<Notification[]>([
-  {
-    id: 'notif_1',
-    title: 'Observatorio Generado',
-    message: 'El Observatorio de Salud Pública NL ha terminado de procesar sus catálogos.',
-    time: 'Hace 5 min',
-    read: false,
-    type: 'success',
-    icon: 'mdi-check-circle-outline',
-    color: 'success'
-  },
-  {
-    id: 'notif_2',
-    title: 'Error en Producto',
-    message: 'Falló la generación de la gráfica "Distribución CIE-10" por un timeout en la API.',
-    time: 'Hace 45 min',
-    read: false,
-    type: 'error',
-    icon: 'mdi-alert-circle-outline',
-    color: 'error'
-  },
-  {
-    id: 'notif_3',
-    title: 'Nuevo Catálogo Disponible',
-    message: 'Se ha agregado el catálogo espacial de Municipios de Tamaulipas (Nivel 2).',
-    time: 'Ayer',
-    read: true,
-    type: 'info',
-    icon: 'mdi-database-plus-outline',
-    color: 'secondary-blue'
-  },
-  {
-    id: 'notif_4',
-    title: 'Exportación Lista',
-    message: 'Tu archivo CSV de 15,000 registros ya está listo para descargar.',
-    time: 'Hace 2 días',
-    read: true,
-    type: 'success',
-    icon: 'mdi-file-delimited-outline',
-    color: 'success'
-  }
-]);
+const jubStore = useJubStore();
+const authStore = useAuthStore();
+const theme = useTheme();
+
+const notifications = ref<Notification[]>([]);
 
 const unreadCount = computed(() => {
-  return notifications.value.filter(n => !n.read).length;
+  return notifications.value.filter((n:Notification) => !n.is_read).length;
 });
 
-const markAsRead = (id: string) => {
-  const notif = notifications.value.find(n => n.id === id);
-  if (notif && !notif.read) {
-    notif.read = true;
+const getNotificationIcons = computed(() => {
+  return (notification:Notification) =>{
+    const entityIcons: Record<string, string> = {
+      observatory: 'mdi-telescope',
+      product: 'mdi-package-variant-closed',
+      catalog: 'mdi-book-open-page-variant',
+      user_profile: 'mdi-account-circle',
+      data_source: 'mdi-database',
+      task: 'mdi-clipboard-list-outline',
+      none: 'mdi-bell',
+      other: 'mdi-dots-horizontal-circle'
+    };
+
+    const operationIcons: Record<string, string> = {
+      create: 'mdi-plus',
+      update: 'mdi-pencil',
+      delete: 'mdi-trash-can',
+      read: 'mdi-eye',
+      other: 'mdi-dots-horizontal'
+    };
+    return entityIcons[notification.entity] || 'mdi-bell';
+  }
+});
+
+
+const getNotificationColors = computed(() => {
+  return (notification:Notification) =>{
+    const statusColors: Record<string, string> = {
+      success: 'green',
+      warning: 'orange',
+      error: 'red',
+      info: 'blue',
+      other: 'grey'
+    };
+    return statusColors[notification.status] || 'grey';
+  }
+});
+
+const markAsRead = async (id: string) => {
+  const notification = notifications.value.find((n:Notification) => n.notification_id=== id);
+  if (notification && !notification.is_read) {
     // Call : jubStore.markNotificationAsRead(id)
+    const response = await jubStore.mark_notification_as_read(notification.notification_id);
+    notification.is_read = response;
+    // }
   }
 };
 
-// Marcar todas como leídas
-const markAllAsRead = () => {
-  notifications.value.forEach(n => n.read = true);
+const markAllAsRead = async () => {
+    const response = await jubStore.mark_all_notifications_as_read();
+    if (response) {
+      notifications.value = notifications.value.map((n:Notification) => ({ ...n, is_read: true }));
+      // value.forEach((n:Notification) => n.is_read  = true);
+    }
+  // notifications.value.forEach(n => n.is_read = true);
   // Call : jubStore.markAllNotificationsAsRead()
 };
+
+
+onMounted(async () => {
+  // Cargar notificaciones desde el store
+  notifications.value = await jubStore.get_notifications();
+  const x = await jubStore.convert_theme_to_jub_format(authStore.settings?.appearance?.theme || 'jubThemeLight');
+  theme.change(x);
+});
+
 </script>
 
 <style scoped>

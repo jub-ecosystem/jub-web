@@ -1,53 +1,26 @@
+import { 
+    type User, 
+    type VerifyDTO, 
+    type AuthAttemptDTO, 
+    // type AuthResponseDTO, 
+    type LogoutDTO,
+    type JubAuthResponseDTO,
+    // type UserProfile,
+    type UserSettings,
+} from '@/types/index.types'
 
-
-export interface VerifyDTO {
-    access_token: string;
-    username: string;
-    secret: string;
-}
-export interface LogoutDTO{
-    access_token: string;
-    username: string;
-}
-
-export interface AuthAttemptDTO {
-    username: string;
-    password: string;
-    scope: string;
-    expiration: string;
-    renew_token: boolean;
-}
-
-export interface User {
-    username: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-    profile_photo: string;
-    role?: string;
-}
-
-export interface AuthResponseDTO{
-    username: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-    profile_photo: string;
-    access_token: string;
-    temporal_secret: string;
-    metadata: Record<string, any>;
-    role?: string;
-}
 
 export const useAuthStore = defineStore('auth', () => {
-    const user = ref<User | null>(null);
-    const isLoading = ref(false);
-    const error = ref<string | null>(null);
-    const isVerified = ref(false);
-    const showAuthDialog = ref(false);
+    const user            = ref<User | null>(null);
+    const settings        = ref<UserSettings | null>(null);
+    const isLoading       = ref(false);
+    const error           = ref<string | null>(null);
+    const isVerified      = ref(false);
+    const showAuthDialog  = ref(false);
     const pendingRedirect = ref<string | null>(null);
 
     const XOLO_API_URL = import.meta.env.VITE_XOLO_API_URL || 'http://localhost:10000/api/v4';
+    const JUB_API_URL = import.meta.env.VITE_JUB_API_URL || 'http://localhost:5000/api/v2';
 
     function clearLocalStorage() {
         localStorage.removeItem("token");
@@ -58,7 +31,7 @@ export const useAuthStore = defineStore('auth', () => {
         isLoading.value  = true;
         error.value      = null;
         isVerified.value = false;
-        
+        console.log("Verifying token with data:", data);
         try {
             const response = await fetch(`${XOLO_API_URL}/users/verify`, {
                 method: "POST",
@@ -99,7 +72,10 @@ export const useAuthStore = defineStore('auth', () => {
     async function login(payload: AuthAttemptDTO) {      
         // Implement login logic here
         try {
-            const response = await fetch(`${XOLO_API_URL}/users/auth`, {
+            console.log("Attempting login with payload:", payload);
+            console.log("Using JUB API URL:", JUB_API_URL); 
+
+            const response = await fetch(`${JUB_API_URL}/users/auth`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -112,20 +88,25 @@ export const useAuthStore = defineStore('auth', () => {
                 console.error("Login failed:", errorData);
                 throw new Error("Failed to login.");
             }
-            const data = await response.json() as AuthResponseDTO;
+            const data = await response.json() as JubAuthResponseDTO;
+            console.log("Login successful, received data:", data);
             // Simulate successful login
             localStorage.setItem("username", payload.username);
             localStorage.setItem("token", data.access_token);
-            localStorage.setItem("secret", data.temporal_secret);
+            localStorage.setItem("secret", data.temporal_secret_key);
             
             user.value = {
-                username: data.username,
-                first_name: data.first_name,
-                last_name: data.last_name,
-                email: data.email,
-                profile_photo: `https://api.dicebear.com/9.x/bottts/svg?seed=${data.first_name}`,
-                role: data.role
+                username: data.user_profile.username,
+                first_name: data.user_profile.first_name,
+                last_name: data.user_profile.last_name,
+                email: data.user_profile.email,
+                profile_photo: `https://api.dicebear.com/9.x/bottts/svg?seed=${data.user_profile.fullname}`,
+                fullname: data.user_profile.fullname,
+                user_id: data.user_profile.user_id,
+                // role: data.user_profile.role
             };
+            settings.value = data.user_profile.settings;
+            // profile.value = data.user_profile;
             isVerified.value = true;
             return true;
         } catch (err) {
@@ -177,6 +158,7 @@ export const useAuthStore = defineStore('auth', () => {
         isVerified,
         showAuthDialog,
         pendingRedirect,
+        settings,
         getUser,
         verifyToken,
         login,

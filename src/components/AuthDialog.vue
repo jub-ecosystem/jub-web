@@ -56,7 +56,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useAuthStore, type AuthAttemptDTO } from '@/stores/auth';
+import { useAuthStore} from '@/stores/auth';
+import { type AuthAttemptDTO } from '@/types/index.types';
 import { useRouter } from 'vue-router';
 import { useAppStore, SnackbarColor } from '@/stores/app';
 

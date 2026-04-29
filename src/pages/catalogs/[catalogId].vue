@@ -1,4 +1,178 @@
+
 <template>
+  <v-container max-width="1200" class="py-8">
+
+    <v-btn
+      variant="text"
+      prepend-icon="mdi-arrow-left"
+      class="text-none font-weight-bold mb-4 px-0"
+      @click="goBack"
+    >
+      Volver a Catálogos
+    </v-btn>
+
+    <!-- Loading -->
+    <template v-if="store.isLoading">
+      <v-skeleton-loader type="heading" class="mb-8" />
+      <v-skeleton-loader type="table" rounded="xl" />
+    </template>
+
+    <!-- Error -->
+    <v-alert v-else-if="store.error" type="error" rounded="xl" :text="store.error" class="mb-6" />
+
+    <template v-else-if="store.catalog">
+
+      <!-- Header -->
+      <v-card rounded="xl" elevation="1" class="mb-8 border-s-lg" style="border-left-color: rgb(var(--v-theme-primary)) !important;">
+        <v-card-text class="d-flex align-center justify-space-between flex-wrap ga-4 pa-6">
+          <div>
+            <div class="d-flex align-center ga-3 mb-1">
+              <h1 class="text-h4 font-weight-black">{{ store.catalog.name }}</h1>
+              <v-chip color="primary" variant="flat" size="small" class="font-monospace font-weight-bold">
+                {{ store.catalog.value }}
+              </v-chip>
+            </div>
+            <p class="text-body-1 text-grey-darken-1 mb-0">
+              Gestiona los elementos, códigos y alias de esta dimensión.
+            </p>
+          </div>
+          <div class="d-flex ga-2">
+            <v-chip prepend-icon="mdi-tag-outline" color="secondary-blue" variant="tonal" class="font-weight-bold">
+              {{ store.catalog.catalog_type }}
+            </v-chip>
+          </div>
+        </v-card-text>
+      </v-card>
+
+      <!-- Search & actions -->
+      <v-row class="mb-2" align="center">
+        <v-col cols="12" md="6">
+          <v-text-field
+            v-model="searchItem"
+            variant="outlined"
+            density="comfortable"
+            rounded="lg"
+            prepend-inner-icon="mdi-magnify"
+            placeholder="Buscar ítem por nombre, código o alias..."
+            hide-details
+            clearable
+            bg-color="surface"
+          />
+        </v-col>
+        <v-col cols="12" md="6" class="d-flex justify-end">
+          <v-btn color="black" prepend-icon="mdi-plus" rounded="lg" class="text-none font-weight-bold">
+            Nuevo Ítem
+          </v-btn>
+        </v-col>
+      </v-row>
+
+      <!-- Table -->
+      <v-card rounded="xl" elevation="2" class="overflow-hidden border">
+        <v-table hover>
+          <thead class="bg-grey-lighten-4">
+            <tr>
+              <th class="text-left font-weight-bold text-uppercase text-caption">Código</th>
+              <th class="text-left font-weight-bold text-uppercase text-caption">Valor</th>
+              <th class="text-left font-weight-bold text-uppercase text-caption">Nombre / Descripción</th>
+              <th class="text-left font-weight-bold text-uppercase text-caption">Tipo de Dato</th>
+              <th class="text-left font-weight-bold text-uppercase text-caption">Alias Conocidos</th>
+              <th class="text-right font-weight-bold text-uppercase text-caption">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in filteredItems" :key="item.catalog_item_id">
+              <td class="font-weight-medium text-grey-darken-2">{{ item.code }}</td>
+              <td>
+                <v-chip size="small" variant="tonal" color="primary-darken-1" class="font-monospace font-weight-bold">
+                  {{ item.value }}
+                </v-chip>
+              </td>
+              <td class="font-weight-bold">{{ item.name }}</td>
+              <td>
+                <v-chip size="x-small" variant="outlined" color="grey-darken-2" class="font-weight-bold">
+                  {{ item.value_type }}
+                </v-chip>
+              </td>
+              <td>
+                <div class="d-flex flex-wrap ga-1 py-2">
+                  <v-chip
+                    v-for="alias in item.aliases"
+                    :key="alias.catalog_item_alias_id"
+                    size="x-small"
+                    color="grey-lighten-2"
+                    variant="flat"
+                    class="text-grey-darken-3 font-weight-medium"
+                  >
+                    {{ alias.value }}
+                  </v-chip>
+                  <span v-if="item.aliases.length === 0" class="text-caption text-grey-lighten-1">
+                    Sin alias
+                  </span>
+                </div>
+              </td>
+              <td class="text-right">
+                <v-btn icon="mdi-pencil-outline" variant="text" size="small" color="grey-darken-1" />
+                <v-btn icon="mdi-delete-outline" variant="text" size="small" color="error" />
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+
+        <div v-if="filteredItems.length === 0" class="pa-8 text-center">
+          <v-icon size="48" color="grey-lighten-1" class="mb-2">mdi-text-box-search-outline</v-icon>
+          <div class="text-body-1 text-grey-darken-1">No se encontraron ítems que coincidan con la búsqueda.</div>
+        </div>
+      </v-card>
+
+    </template>
+
+  </v-container>
+</template>
+
+<script lang="ts" setup>
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useJubStore } from '@/stores/jub';
+import { type CatalogItemDTO } from '@/types/index.types';
+// import { useCatalogDetailsStore } from '@/stores/catalog-details.store';
+
+definePage({
+  name: 'CatalogDetails',
+  meta: { requiresAuth: true, layout: 'dashboard' },
+});
+
+const router    = useRouter();
+const route     = useRoute('CatalogDetails');
+const store     = useJubStore();
+const searchItem = ref('');
+
+// Flatten items + all descendants for the table (handles children recursively)
+function flattenItems(items: CatalogItemDTO[]): CatalogItemDTO[] {
+  return items.flatMap(item => [item, ...flattenItems(item.children ?? [])]);
+}
+
+const filteredItems = computed(() => {
+  const flat = flattenItems(store.catalog?.items ?? []);
+  if (!searchItem.value) return flat;
+  const q = searchItem.value.toLowerCase();
+  return flat.filter(item =>
+    item.name.toLowerCase().includes(q) ||
+    item.value.toLowerCase().includes(q) ||
+    item.code.toString().includes(q) ||
+    item.aliases.some(a => a.value.toLowerCase().includes(q))
+  );
+});
+
+const goBack = () => router.push({ name: 'Catalogs' });
+
+onMounted(() => {
+  const catalogId = route.params.catalogId as string;
+  store.fetchCatalog(catalogId);
+});
+
+onBeforeUnmount(() => store.reset());
+</script>
+<!-- <template>
   <v-container max-width="1200" class="py-8">
     
     <v-btn 
@@ -216,4 +390,4 @@ const goBack = () => {
   router.push({ name: 'Catalogs' });
   
 };
-</script>
+</script> -->
