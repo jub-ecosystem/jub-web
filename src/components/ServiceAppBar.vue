@@ -40,7 +40,7 @@
 
   <v-app-bar app :color="props.color" elevation="1" height="80" class="px-6">
     <v-btn color="white" variant="outlined" rounded class="text-none font-weight-bold" @click="router.push('/')">
-      Prueba
+      Inicio
     </v-btn>
       <v-spacer></v-spacer>
       <div class="d-none d-md-flex align-center">

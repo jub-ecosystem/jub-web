@@ -106,6 +106,8 @@ services:
     command: uvicorn jubapi.server:app --host ${JUB_HOST:-0.0.0.0} --port ${JUB_PORT:-5000}
     ports:
       - ${JUB_LOCAL_PORT:-5000}:5000
+    volumes:
+      - jub-data:/jub
     deploy:
       replicas: 1
       resources:
@@ -149,3 +151,4 @@ volumes:
   xolo-cache-data:
   xolo-data:
   jub-db:
+  jub-data:

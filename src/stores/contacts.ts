@@ -1,54 +1,320 @@
 import { defineStore } from 'pinia';
+
 export interface Contact {
     id: number;
     name: string;
-    phone: string;
+    institution: string;
+    degree: string;
+    area: string;
     role: string[];
-    image: string;
-    country: string;
+    duration: string;
+    snii?: string;
+    cvu?: string;
     bio: string;
+    image: string;
+    isLead?: boolean;
+    services?: ('JUB' | 'Xelhua' | 'Nez' | 'MictlanX')[];
 }
 
+const DEFAULT_IMAGE = 'https://muyal.tamps.cinvestav.mx//images/contact/00.png';
 
 export const useContactStore = defineStore('contact', () => {
-    // Reactive state for team members and search query
-    const contacts = ref<Contact[]>([]);
+    const contacts = ref<Contact[]>([
+        {
+            id: 1,
+            name: 'José Luis González Compeán',
+            institution: 'Cinvestav Tamaulipas',
+            degree: 'Doctor en Arquitectura de Computadores',
+            area: 'Sistemas Distribuidos, Almacenamiento, Cómputo de Alto Rendimiento',
+            role: ['Responsable Técnico', 'Investigador Principal'],
+            duration: '18 meses',
+            snii: 'Nivel II',
+            cvu: '300443',
+            bio: 'Investigador titular en Cinvestav Tamaulipas y responsable técnico del proyecto MADTEC-2025-M-478. Ha liderado el Proyecto Sectorial AEM-2015-1-262891 y el Proyecto PRONACES #41756. Su investigación se centra en sistemas distribuidos, arquitecturas de almacenamiento y cómputo de alto rendimiento.',
+            image: DEFAULT_IMAGE,
+            isLead: true,
+            services: ['JUB', 'MictlanX',"Xelhua", "Nez"],
+        },
+        {
+            id: 2,
+            name: 'Iván López Arévalo',
+            institution: 'Cinvestav Tamaulipas',
+            degree: 'Doctor en Computación',
+            area: 'Análisis de Datos, Ciencia de Datos, Representación del Conocimiento',
+            role: ['Investigador', 'Análisis de Datos'],
+            duration: '18 meses',
+            snii: 'Nivel I',
+            cvu: '98405',
+            bio: 'Investigador en Cinvestav Tamaulipas. Colaborador en los proyectos AEM-2015-1-262891 y PRONACES #41756. Responsable de los módulos de preprocesamiento, curado y análisis de datos del ecosistema JUB.',
+            image: DEFAULT_IMAGE,
+            services: ['JUB'],
+        },
+        {
+            id: 3,
+            name: 'José Tuxpan Vargas',
+            institution: 'Instituto Potosino de Investigación y Tecnológica',
+            degree: 'Doctor en Ingeniería Eléctrica',
+            area: 'Percepción Remota, Geoinformática',
+            role: ['Investigador', 'Percepción Remota'],
+            duration: '12 meses',
+            snii: 'Nivel II',
+            cvu: '227355',
+            bio: 'Investigador en el Instituto Potosino de Investigación y Tecnológica. Especialista en percepción remota y geoinformática. Contribuye al procesamiento de datos satelitales en el ecosistema JUB.',
+            image: DEFAULT_IMAGE,
+            services: ['Nez'],
+        },
+        {
+            id: 4,
+            name: 'Gabriel Alejandro Galaviz Mosqueda',
+            institution: 'CICESE',
+            degree: 'Doctor en Ciencias en Electrónica y Telecomunicaciones',
+            area: 'IoT, e-Salud, TICs para Ciudades Inteligentes',
+            role: ['Investigador', 'IoT'],
+            duration: '12 meses',
+            snii: 'Nivel I',
+            cvu: '167835',
+            bio: 'Investigador en el Centro de Investigación Científica y de Educación Superior de Ensenada (CICESE). Especialista en IoT, e-Salud y tecnologías de información y comunicación para ciudades sostenibles e inteligentes.',
+            image: DEFAULT_IMAGE,
+            services: ['JUB'],
+        },
+        {
+            id: 5,
+            name: 'Benjamin Raziel Jaramillo Avila',
+            institution: 'CICESE',
+            degree: 'Doctor en Física',
+            area: 'Óptica, Procesos Físicos y Dispositivos Médicos',
+            role: ['Investigador', 'Óptica'],
+            duration: '12 meses',
+            snii: 'Nivel I',
+            cvu: '294998',
+            bio: 'Investigador en CICESE. Especialista en óptica y procesos físicos aplicados al diseño de dispositivos médicos.',
+            image: DEFAULT_IMAGE,
+            services: ['Nez'],
+        },
+        {
+            id: 6,
+            name: 'Miguel Morales Sandoval',
+            institution: 'INAOE',
+            degree: 'Doctor en Ciencias Computacionales',
+            area: 'Criptografía, Sistemas Embebidos, Ingeniería de Software',
+            role: ['Investigador', 'Criptografía'],
+            duration: '12 meses',
+            snii: 'Nivel II',
+            cvu: '41773',
+            bio: 'Investigador en el Instituto Nacional de Astrofísica, Óptica y Electrónica (INAOE). Especialista en criptografía, sistemas embebidos e ingeniería de software seguro.',
+            image: DEFAULT_IMAGE,
+            services: ['MictlanX'],
+        },
+        {
+            id: 7,
+            name: 'Arturo Diaz Pérez',
+            institution: 'Cinvestav Unidad Guadalajara',
+            degree: 'Doctor en Ingeniería Eléctrica',
+            area: 'Seguridad IoT, Análisis de Redes Complejas',
+            role: ['Investigador', 'Seguridad'],
+            duration: '12 meses',
+            snii: 'Nivel I',
+            cvu: '122092',
+            bio: 'Investigador en Cinvestav Unidad Guadalajara. Especialista en seguridad para dispositivos del IoT, análisis de redes complejas y algoritmos paralelos para seguridad informática.',
+            image: DEFAULT_IMAGE,
+            services: ['MictlanX'],
+        },
+        {
+            id: 8,
+            name: 'Jesús Carretero Pérez',
+            institution: 'Universidad Carlos III de Madrid, España',
+            degree: 'Doctor en Informática',
+            area: 'HPC, Sistemas Distribuidos, IoT, Tiempo Real',
+            role: ['Colaborador Internacional', 'HPC'],
+            duration: '12 meses',
+            bio: 'Profesor e investigador en la Universidad Carlos III de Madrid. Especialista en sistemas de computación de alto rendimiento, sistemas distribuidos a gran escala, computación intensiva en datos e IoT.',
+            image: DEFAULT_IMAGE,
+            services: ['JUB', 'MictlanX'],
+        },
+        {
+            id: 9,
+            name: 'Pedro Antonio García López',
+            institution: 'Universidad Rovira i Virgili, España',
+            degree: 'Doctor en Sistemas Inteligentes',
+            area: 'Inteligencia Artificial, Redes de Computadoras',
+            role: ['Colaborador Internacional', 'IA'],
+            duration: '12 meses',
+            bio: 'Investigador en la Universidad Rovira i Virgili. Especialista en inteligencia artificial, redes de computadoras y comunicaciones.',
+            image: DEFAULT_IMAGE,
+            services: ['JUB'],
+        },
+        {
+            id: 10,
+            name: 'Raffaele Montella',
+            institution: 'Universidad de Nápoles "Parthenope", Italia',
+            degree: 'Doctor en Ciencias e Ingeniería Marina',
+            area: 'IoT, Inteligencia Artificial',
+            role: ['Colaborador Internacional', 'IoT'],
+            duration: '12 meses',
+            bio: 'Investigador en la Universidad de Nápoles Parthenope. Especialista en IoT e inteligencia artificial aplicada a ciencias marinas.',
+            image: DEFAULT_IMAGE,
+            services: ['Nez'],
+        },
+        {
+            id: 11,
+            name: 'Ricardo Marcelin Jiménez',
+            institution: 'Universidad Autónoma Metropolitana',
+            degree: 'Doctor en Ciencias de la Computación',
+            area: 'Almacenamiento Distribuido, Tolerancia a Fallas, Redes Complejas',
+            role: ['Investigador', 'Sistemas Distribuidos'],
+            duration: '12 meses',
+            snii: 'Nivel I',
+            cvu: '121779',
+            bio: 'Investigador en la Universidad Autónoma Metropolitana. Especialista en sistemas de almacenamiento distribuido, sistemas tolerantes a fallas y redes complejas.',
+            image: DEFAULT_IMAGE,
+            services: ['MictlanX'],
+        },
+        {
+            id: 12,
+            name: 'Francisco Javier Pérez Vázquez',
+            institution: 'Universidad Autónoma de San Luis Potosí',
+            degree: 'Doctor en Ciencias Biomédicas Básicas',
+            area: 'Salud Pública y Ciencias de la Salud',
+            role: ['Responsable Técnico ALERTA', 'Salud Pública'],
+            duration: '12 meses',
+            snii: 'Nivel II',
+            cvu: '265524',
+            bio: 'Investigador en la UASLP. Responsable técnico del Observatorio ALERTA. Coordinador del trabajo de campo para la validación del sistema, supervisa a los colaboradores durante el análisis de contaminantes en zonas detectadas por el observatorio.',
+            image: DEFAULT_IMAGE,
+            services: ['Xelhua'],
+        },
+        {
+            id: 13,
+            name: 'Juan Carlos Fernández Macías',
+            institution: 'Universidad Autónoma de San Luis Potosí',
+            degree: 'Doctor en Toxicología Molecular',
+            area: 'Salud Pública, Toxicología',
+            role: ['Colaborador ALERTA', 'Toxicología'],
+            duration: '12 meses',
+            snii: 'Nivel I',
+            cvu: '621598',
+            bio: 'Colaborador en la UASLP. Especialista en toxicología molecular. Responsable de la captura de muestras de contaminantes en campo y del análisis de datos para el Observatorio ALERTA.',
+            image: DEFAULT_IMAGE,
+            services: ['Xelhua'],
+        },
+        {
+            id: 14,
+            name: 'María de Lourdes Mendoza Flores',
+            institution: 'Universidad Autónoma de San Luis Potosí',
+            degree: 'Maestra en Salud Pública con enfoque en Epidemiología',
+            area: 'Salud Pública, Epidemiología',
+            role: ['Colaboradora ALERTA', 'Epidemiología'],
+            duration: '12 meses',
+            cvu: '1012169',
+            bio: 'Colaboradora en la UASLP. Realiza el análisis de zonas de riesgo basadas en el Observatorio ALERTA y participa en las actividades de trabajo de campo para la validación de resultados.',
+            image: DEFAULT_IMAGE,
+            services: ['Xelhua'],
+        },
+        {
+            id: 15,
+            name: 'Hugo German Reyes Anastacio',
+            institution: 'Universidad Autónoma de San Luis Potosí',
+            degree: 'Doctor en Ciencias en Ingeniería y Tecnologías Computacionales',
+            area: 'Ciencia e Ingeniería de la Computación',
+            role: ['Colaborador Externo', 'ALERTA'],
+            duration: '18 meses',
+            snii: 'Candidato',
+            cvu: '699893',
+            bio: 'Colaborador externo en la UASLP con servicio en el proyecto PRONACES #41756. Responsable del seguimiento del proceso de construcción y despliegue del Observatorio ALERTA.',
+            image: DEFAULT_IMAGE,
+            services: ['Xelhua'],
+        },
+        {
+            id: 16,
+            name: 'Melesio Crespo Sánchez',
+            institution: 'Universidad Autónoma de San Luis Potosí',
+            degree: 'Doctor en Ciencias en Ingeniería y Tecnologías Computacionales',
+            area: 'Ciencia de Datos',
+            role: ['Colaborador Externo', 'IMA'],
+            duration: '18 meses',
+            cvu: '709733',
+            bio: 'Colaborador externo en la UASLP con servicio en el proyecto PRONACES #41756. Responsable del seguimiento del proceso de construcción y despliegue del Observatorio IMA.',
+            image: DEFAULT_IMAGE,
+            services: ['JUB', 'MictlanX'],
+        },
+        {
+            id: 17,
+            name: 'Martha Cordero Oropeza',
+            institution: 'Instituto Nacional de Psiquiatría Ramón de la Fuente Muñiz',
+            degree: 'Maestra en Ciencias',
+            area: 'Salud Mental Pública',
+            role: ['Coordinadora Azomalli', 'Salud Mental'],
+            duration: '18 meses',
+            cvu: '100067',
+            bio: 'Coordinadora en el Instituto Nacional de Psiquiatría Ramón de la Fuente Muñiz. Responsable del seguimiento y análisis de la construcción del Observatorio Azomalli, dentro del proyecto de monitoreo de la atención a trastornos mentales por consumo de sustancias.',
+            image: DEFAULT_IMAGE,
+            services: ['Xelhua', 'JUB'],
+        },
+        {
+            id: 18,
+            name: 'José Carlos Morín García',
+            institution: 'Cinvestav Tamaulipas',
+            degree: 'Maestro en Ciencias en Ingeniería y Tecnologías Computacionales',
+            area: 'Orquestación de Datos, Despliegue de Sistemas',
+            role: ['Colaborador', 'Azomalli'],
+            duration: '18 meses',
+            cvu: '1077869',
+            bio: 'Investigador en Cinvestav Tamaulipas. Especialista en orquestación de datos y despliegue de sistemas de ciencia de datos. Responsable del seguimiento del proceso de construcción y despliegue del Observatorio Azomalli.',
+            image: DEFAULT_IMAGE,
+            services: ['Xelhua', 'JUB'],
+        },
+        {
+            id: 19,
+            name: 'Jesús Ignacio Castillo Barrios',
+            institution: 'Cinvestav Tamaulipas',
+            degree: 'Maestro en Ciencias en Ingeniería y Tecnologías Computacionales',
+            area: 'Sistemas de Almacenamiento, Arquitectura de Software',
+            role: ['Colaborador', 'MictlanX / JUB'],
+            duration: '18 meses',
+            cvu: '1074877',
+            bio: 'Investigador en Cinvestav Tamaulipas. Especialista en sistemas de almacenamiento y arquitectura de software. Responsable de la supervisión del proceso de integración de los acopladores de MictlanX con los servicios Xelhua, Nez y JUB.',
+            image: DEFAULT_IMAGE,
+            services: ['MictlanX', 'Xelhua', 'Nez', 'JUB'],
+        },
+        {
+            id: 20,
+            name: 'Heriberto Aguirre Meneses',
+            institution: 'Instituto Nacional de Rehabilitación',
+            degree: 'Maestro en Ciencias en Ingeniería Biomédica',
+            area: 'Ingeniería Biomédica, Imagenología por Tomografía',
+            role: ['Colaborador Nez', 'Ing. Biomédica'],
+            duration: '12 meses',
+            cvu: '163065',
+            bio: 'Colaborador del Instituto Nacional de Rehabilitación. Especialista en imagenología por tomografía computarizada. Contribuye al desarrollo del sistema de diagnóstico de osteosarcoma y cáncer de pulmón mediante algoritmos de aprendizaje profundo.',
+            image: DEFAULT_IMAGE,
+            services: ['Nez'],
+        },
+        {
+            id: 21,
+            name: 'Marco Antonio Núñez Gaona',
+            institution: 'Instituto Nacional de Rehabilitación',
+            degree: 'Maestro en Ciencias y Tecnologías de la Salud',
+            area: 'Ciencias y Tecnologías de la Salud, Sistemas PACS',
+            role: ['Colaborador Nez', 'Salud'],
+            duration: '12 meses',
+            cvu: '224497',
+            bio: 'Colaborador del Instituto Nacional de Rehabilitación. Especialista en ciencias y tecnologías de la salud con experiencia en desarrollo y configuración de sistemas PACS y almacenamiento médico. Contribuye al desarrollo del sistema de diagnóstico por imagen de Nez.',
+            image: DEFAULT_IMAGE,
+            services: ['Nez'],
+        },
+    ]);
+
     const searchQuery = ref('');
 
-    // Computed property to filter members based on search query
     const filteredContacts = computed(() => {
-      if (!searchQuery.value) {
-        return contacts.value;
-      }
-      return contacts.value.filter(member =>
-        member.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-      );
+        if (!searchQuery.value) return contacts.value;
+        const q = searchQuery.value.toLowerCase();
+        return contacts.value.filter(m =>
+            m.name.toLowerCase().includes(q) ||
+            m.institution.toLowerCase().includes(q) ||
+            m.area.toLowerCase().includes(q)
+        );
     });
 
-
-    function initContacts(){
-        for (let i = 1; i <= 12; i++) {
-          let random_letters = Math.random().toString(36).substring(2, 10);
-
-
-          const default_contact: Contact = {
-            bio:"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec vel sapien eget nunc efficitur varius. Sed at felis ac nisl convallis tincidunt. Curabitur a ligula id enim efficitur commodo.",
-            country: "México",
-            id: i,
-            image: `https://api.dicebear.com/9.x/bottts/svg?seed=${i}`,
-            name: `${random_letters} ${i}`,
-            phone: `+52 55 1234 567${i}`,
-            role: ["Desarrollador", "Diseñador"]
-          }
-          contacts.value= [...contacts.value, default_contact];
-          // members+=
-      }
-    }
-
-    return {
-      contacts,
-      searchQuery,
-      filteredContacts,
-      initContacts
-    }
+    return { contacts, searchQuery, filteredContacts };
 });

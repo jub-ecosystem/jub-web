@@ -68,6 +68,10 @@ router.beforeEach(async (to, from, next) => {
   // next()
 })
 
+router.afterEach(() => {
+  window.scrollTo({ top: 0 });
+});
+
 // Workaround for https://github.com/vitejs/vite/issues/11804
 router.onError((err, to) => {
   if (err?.message?.includes?.('Failed to fetch dynamically imported module')) {

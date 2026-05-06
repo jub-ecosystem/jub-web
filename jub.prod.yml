@@ -1,8 +1,6 @@
 services:
   xolo-db:
     image: mongo:8-noble
-    # ports:
-      # - ${XOLO_MONGODB_PORT:-27018}:27017
     volumes:
       - xolo-db:/data/db
       - /home/jcastillo/jub/mongod.conf:/etc/mongo/mongod.conf:ro
@@ -28,8 +26,6 @@ services:
   # =============================
   xolo-cache:
     image: redis:7.0.11-alpine
-    # ports:
-      # - ${XOLO_CACHE_REDIS_PORT:-6379}:6379
     volumes:
       - xolo-cache-data:/data
     networks:
@@ -53,12 +49,9 @@ services:
   # XOLO API Service
   # =============================
   xolo:
-    image: nachocode/xolo:api-0.0.11a0
+    image: nachocode/xolo:api-0.0.11a2
     env_file:
       - /home/jcastillo/jub/.xolo.env.prod
-    # environment:
-    # ports:
-      # - ${XOLO_PORT:-10001}:${XOLO_PORT:-10001}
     volumes:
       - xolo-data:/xolo
     networks:
@@ -122,7 +115,7 @@ services:
   
     
   jub:
-    image: nachocode/jub:api-0.0.1a2-nightly
+    image: nachocode/jub:api-0.0.2
     env_file:
       - .jub.env.prod
     networks:

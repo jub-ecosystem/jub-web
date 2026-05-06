@@ -1,5 +1,5 @@
 import {defineStore} from 'pinia'
-import {type CatalogResponseDTO,type CatalogItemAliasDTO,type CatalogItemDTO ,type CatalogSummaryDTO, type Notification,type ObservatoryDTO,type ProductXDTO,type UserSettings, type DataSourceDTO, type DataRecord, type TaskXDTO, type TasksStatsDTO, type ServiceDTO, type CatalogItemXResponseDTO, type ReviewDTO} from '@/types/index.types'
+import {type CatalogResponseDTO,type CatalogItemAliasDTO,type CatalogItemDTO ,type CatalogSummaryDTO, type Notification,type ObservatoryDTO,type ObservatoryStatsDTO,type ProductXDTO,type UserSettings, type DataSourceDTO, type DataRecord, type TaskXDTO, type TasksStatsDTO, type ServiceDTO, type CatalogItemXResponseDTO, type ReviewDTO} from '@/types/index.types'
 // interface Observatory
 
 
@@ -211,7 +211,7 @@ export const useJubStore = defineStore('jub', () => {
             isLoading.value = false
         }
     }
-    async function search_observatories(query:string): Promise<ObservatoryDTO[]>{
+    async function search_observatories(query:string,strict:boolean, skip = 0, limit = 24): Promise<ObservatoryDTO[]>{
         try{
             isLoading.value = true;
             const response = await fetch(`${API_URL}/search/observatories`, {
@@ -219,7 +219,7 @@ export const useJubStore = defineStore('jub', () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ query })
+                body: JSON.stringify({ query,strict, skip, limit })
             });
             if(response.ok){
                 const data:ObservatoryDTO[] = await response.json();
@@ -237,7 +237,7 @@ export const useJubStore = defineStore('jub', () => {
         }
     }
 
-    async function search(query:string,observatory_id:string,skip:number,limit:number): Promise<ProductXDTO[]>{
+    async function search(query:string,observatory_id:string,skip:number,limit:number, strict = false): Promise<ProductXDTO[]>{
         try{
             isLoading.value = true;
             const response = await fetch(`${API_URL}/search`, {
@@ -245,7 +245,7 @@ export const useJubStore = defineStore('jub', () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ query,observatory_id, skip,limit })
+                body: JSON.stringify({ query,observatory_id, skip,limit, strict })
             });
             if(response.ok){
                 const data:ProductXDTO[] = await response.json();
@@ -258,7 +258,33 @@ export const useJubStore = defineStore('jub', () => {
             error.value = e instanceof Error ? e.message : String(e);
             return [];
         } finally {
-            isLoading.value = false; 
+            isLoading.value = false;
+        }
+    }
+
+    async function getObservatory(observatoryId: string): Promise<ObservatoryDTO | null> {
+        try {
+            const res = await fetch(`${API_URL}/observatories/${observatoryId}`, {
+                headers: authHeaders(),
+            });
+            if (!res.ok) return null;
+            return await res.json() as ObservatoryDTO;
+        } catch {
+            return null;
+        }
+    }
+
+    async function fetchObservatoryStats(ids: string[]): Promise<ObservatoryStatsDTO[]> {
+        try {
+            const res = await fetch(`${API_URL}/observatories/details`, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({ ids }),
+            });
+            if (!res.ok) return [];
+            return await res.json() as ObservatoryStatsDTO[];
+        } catch {
+            return [];
         }
     }
     async function upload_yaml(file: File | Blob): Promise<boolean> {
@@ -357,13 +383,13 @@ export const useJubStore = defineStore('jub', () => {
     return result;
   }
 
-  async function searchServices(query: string, skip = 0, limit = 100): Promise<ServiceDTO[]> {
+  async function searchServices(query: string, skip = 0, limit = 100, strict = false): Promise<ServiceDTO[]> {
     try {
       isLoading.value = true;
       const response = await fetch(`${API_URL}/search/services`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, skip, limit }),
+        body: JSON.stringify({ query, skip, limit, strict }),
       });
       if (!response.ok) throw new Error(response.statusText);
       return await response.json() as ServiceDTO[];
@@ -467,10 +493,10 @@ export const useJubStore = defineStore('jub', () => {
     }
   }
 
-  async function fetchTasks(): Promise<TaskXDTO[]> {
+  async function fetchTasks(skip = 0, limit = 20): Promise<TaskXDTO[]> {
     try {
       isLoading.value = true;
-      const response = await fetch(`${API_URL}/tasks`, { headers: authHeaders() });
+      const response = await fetch(`${API_URL}/tasks?skip=${skip}&limit=${limit}`, { headers: authHeaders() });
       if (!response.ok) throw new Error(response.statusText);
       return await response.json() as TaskXDTO[];
     } catch (e) {
@@ -620,6 +646,8 @@ export const useJubStore = defineStore('jub', () => {
 
     return {
         get_observatories,
+        getObservatory,
+        fetchObservatoryStats,
         search,
         search_observatories,
         upload_yaml,
@@ -632,6 +660,8 @@ export const useJubStore = defineStore('jub', () => {
         isLoading,
         error,
         catalog,
+        catalogs,
+        catalogItemsCache,
         fetchCatalog,
         fetchCatalogs,
         fetchDataSources,
@@ -648,7 +678,6 @@ export const useJubStore = defineStore('jub', () => {
         fetchProductTagDetails,
         downloadProduct,
         reset,
-        catalogs,
         incrementViews,
         getReviews,
         createReview,

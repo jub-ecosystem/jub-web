@@ -115,7 +115,22 @@
                 <v-btn icon="mdi-content-copy" variant="text" size="x-small" color="grey" @click="copyDSL" />
               </div>
 
-              <div class="d-flex ga-2 align-center flex-shrink-0">
+              <div class="d-flex ga-2 align-center flex-shrink-0 flex-wrap">
+                <div class="d-flex align-center ga-1">
+                  <v-checkbox
+                    v-model="strict"
+                    label="Búsqueda estricta"
+                    density="compact"
+                    hide-details
+                    color="primary"
+                    class="flex-shrink-0"
+                  />
+                  <v-tooltip location="top" max-width="300" text="En modo estricto todos los términos deben coincidir exactamente con el nombre o descripción del servicio.">
+                    <template #activator="{ props: tp }">
+                      <v-icon v-bind="tp" size="16" color="grey-lighten-1" class="cursor-help">mdi-help-circle-outline</v-icon>
+                    </template>
+                  </v-tooltip>
+                </div>
                 <v-btn
                   variant="text"
                   color="grey-darken-1"
@@ -315,6 +330,21 @@
         </template>
       </v-list>
     </v-card>
+
+    <!-- ── Load more ── -->
+    <v-row v-if="canLoadMore && !jubStore.isLoading" justify="center" class="mt-6">
+      <v-col cols="auto">
+        <v-btn
+          variant="tonal"
+          color="primary"
+          rounded="pill"
+          :loading="loadingMore"
+          prepend-icon="mdi-chevron-down"
+          class="px-8 font-weight-bold text-none"
+          @click="loadMore"
+        >Cargar más</v-btn>
+      </v-col>
+    </v-row>
 
     <!-- ── No results ── -->
     <v-row
@@ -607,6 +637,7 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue';
 import { useJubStore } from '@/stores/jub';
+import { useAuthStore } from '@/stores/auth';
 import type { ServiceDTO, ServiceProvider, PatternDetailDTO, BuildingBlockDetailDTO } from '@/types/index.types';
 import nezLogo from '@/assets/nez.png';
 import xelhuaLogo from '@/assets/xelhua.png';
@@ -616,7 +647,8 @@ definePage({
   meta: { requiresAuth: true, layout: 'dashboard' },
 });
 
-const jubStore = useJubStore();
+const jubStore  = useJubStore();
+const authStore = useAuthStore();
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 const providerLogo: Record<ServiceProvider, string | null> = {
@@ -671,10 +703,26 @@ async function copyDSL() {
 const searchCounter = ref(0);
 const services      = ref<ServiceDTO[]>([]);
 const viewMode      = ref<'grid' | 'list'>('grid');
+const strict        = ref(false);
+const skip          = ref(0);
+const loadingMore   = ref(false);
+const canLoadMore   = ref(false);
+const pageSize      = computed(() => authStore.settings?.exploration?.items_per_page ?? 24);
 
 async function executeSearch() {
   searchCounter.value++;
-  services.value = await jubStore.searchServices(computedDSL.value, 0, 100);
+  skip.value = 0;
+  services.value = await jubStore.searchServices(computedDSL.value, 0, pageSize.value, strict.value);
+  canLoadMore.value = services.value.length === pageSize.value;
+}
+
+async function loadMore() {
+  loadingMore.value = true;
+  skip.value += pageSize.value;
+  const more = await jubStore.searchServices(computedDSL.value, skip.value, pageSize.value, strict.value);
+  services.value.push(...more);
+  canLoadMore.value = more.length === pageSize.value;
+  loadingMore.value = false;
 }
 
 // ── Detail dialog ─────────────────────────────────────────────────────────────
@@ -719,8 +767,7 @@ const allBlocks = computed((): BuildingBlockDetailDTO[] => {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  searchCounter.value++;
-  services.value = await jubStore.searchServices(computedDSL.value, 0, 100);
+  await executeSearch();
 });
 </script>
 

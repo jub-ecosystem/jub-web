@@ -10,12 +10,21 @@
           <p class="text-body-1 text-grey-darken-1">
             Explora las visualizaciones y datos generados en este observatorio.
           </p>
+          <v-btn
+            v-if="observatory"
+            variant="outlined"
+            color="primary"
+            size="small"
+            prepend-icon="mdi-information-outline"
+            class="text-none mt-2"
+            @click="infoDrawer = true"
+          >Ver detalles del observatorio</v-btn>
         </div>
 
         <v-card rounded="xl" elevation="3" class="border">
           <v-card-text class="pa-6">
 
-            <v-row>
+            <v-row v-if="!advancedMode">
 
               <!-- ── VS: Espacio ── -->
               <v-col cols="12" md="4">
@@ -23,7 +32,7 @@
                   <v-avatar color="blue" variant="tonal" size="28" rounded="lg">
                     <v-icon size="16">mdi-map-marker-outline</v-icon>
                   </v-avatar>
-                  <span class="text-subtitle-2 font-weight-bold">Región geográfica</span>
+                  <span class="text-subtitle-2 font-weight-bold">Variable Espacial</span>
                   <v-chip size="x-small" color="blue" variant="tonal" class="font-monospace font-weight-black">VS</v-chip>
                   <v-tooltip location="top" max-width="280" text="Filtra por entidad, estado o país. Selecciona una o varias regiones de la lista.">
                     <template #activator="{ props: tp }">
@@ -74,7 +83,7 @@
                   <v-avatar color="teal" variant="tonal" size="28" rounded="lg">
                     <v-icon size="16">mdi-calendar-outline</v-icon>
                   </v-avatar>
-                  <span class="text-subtitle-2 font-weight-bold">Período de tiempo</span>
+                  <span class="text-subtitle-2 font-weight-bold">Variable Temporal</span>
                   <v-chip size="x-small" color="teal" variant="tonal" class="font-monospace font-weight-black">VT</v-chip>
                   <v-tooltip location="top" max-width="280" text="Filtra por año o período. Se envía el código numérico del período (ej: 2024).">
                     <template #activator="{ props: tp }">
@@ -125,7 +134,7 @@
                   <v-avatar color="green" variant="tonal" size="28" rounded="lg">
                     <v-icon size="16">mdi-tag-outline</v-icon>
                   </v-avatar>
-                  <span class="text-subtitle-2 font-weight-bold">Categoría de interés</span>
+                  <span class="text-subtitle-2 font-weight-bold">Variable de Interés</span>
                   <v-chip size="x-small" color="green" variant="tonal" class="font-monospace font-weight-black">VI</v-chip>
                   <v-tooltip location="top" max-width="280" text="Variables de clasificación como sexo, grupo de edad, diagnóstico, etc.">
                     <template #activator="{ props: tp }">
@@ -172,6 +181,18 @@
 
             </v-row>
 
+            <v-textarea
+              v-else
+              v-model="advancedQuery"
+              label="Consulta DSL"
+              placeholder="jub.v1.VS(*).VT(*).VI(*)"
+              variant="outlined"
+              density="comfortable"
+              rows="3"
+              hide-details
+              class="font-monospace"
+            />
+
             <v-divider class="my-5" />
 
             <!-- Bottom bar: DSL preview + actions -->
@@ -183,11 +204,35 @@
                 <code
                   class="text-caption font-monospace px-2 py-1 rounded-lg text-primary text-truncate"
                   style="background: rgba(var(--v-theme-primary), .08); max-width: 380px; display: block;"
-                >{{ computedDSL }}</code>
+                >{{ advancedMode ? advancedQuery : computedDSL }}</code>
                 <v-btn icon="mdi-content-copy" variant="text" size="x-small" color="grey" @click="copyDSL" />
               </div>
 
-              <div class="d-flex ga-2 align-center flex-shrink-0">
+              <div class="d-flex ga-2 align-center flex-shrink-0 flex-wrap">
+                <v-switch
+                  v-model="advancedMode"
+                  label="Modo avanzado"
+                  density="compact"
+                  hide-details
+                  color="primary"
+                  class="flex-shrink-0"
+                  @update:model-value="onToggleAdvanced"
+                />
+                <div class="d-flex align-center ga-1">
+                  <v-checkbox
+                    v-model="strict"
+                    label="Búsqueda estricta"
+                    density="compact"
+                    hide-details
+                    color="primary"
+                    class="flex-shrink-0"
+                  />
+                  <v-tooltip location="top" max-width="300" text="En modo estricto todos los términos deben coincidir exactamente con los datos del producto.">
+                    <template #activator="{ props: tp }">
+                      <v-icon v-bind="tp" size="16" color="grey-lighten-1" class="cursor-help">mdi-help-circle-outline</v-icon>
+                    </template>
+                  </v-tooltip>
+                </div>
                 <v-btn
                   variant="text"
                   color="grey-darken-1"
@@ -278,12 +323,14 @@
             class="h-100 transition-swing cursor-pointer d-flex flex-column"
             @click="openDetails(product)"
           >
-            <v-img
-              src="https://placehold.co/600x400/eeeeee/999999?text=Visualizaci%C3%B3n"
-              height="160"
-              cover
-              class="align-start bg-grey-lighten-4 border-bottom"
-            />
+            <!-- Extension icon placeholder -->
+            <div
+              class="d-flex flex-column align-center justify-center bg-grey-lighten-4 border-bottom"
+              style="height: 160px;"
+            >
+              <v-icon size="48" color="grey-darken-1">{{ extensionIcon(product.metadata?.extension) }}</v-icon>
+              <span v-if="product.metadata?.extension" class="text-caption text-grey-darken-1 mt-1 font-monospace">.{{ product.metadata.extension }}</span>
+            </div>
 
             <v-card-item class="pt-4 pb-2">
               <v-card-title class="text-subtitle-1 font-weight-bold text-wrap" style="line-height: 1.2;">
@@ -304,7 +351,7 @@
                   color="secondary-blue"
                   class="font-weight-medium"
                 >
-                  {{ tag }}
+                  {{ tagNameMap.get(tag) ?? tag }}
                 </v-chip>
                 <span v-if="(product.tags?.length || 0) > 3" class="text-caption text-grey-darken-1 ml-1 align-self-center">
                   +{{ product.tags!.length - 3 }}
@@ -314,6 +361,21 @@
           </v-card>
         </v-hover>
 
+      </v-col>
+    </v-row>
+
+    <!-- ── Load more ── -->
+    <v-row v-if="canLoadMore && !jubStore.isLoading && viewMode === 'grid'" justify="center" class="mt-6">
+      <v-col cols="auto">
+        <v-btn
+          variant="tonal"
+          color="primary"
+          rounded="pill"
+          :loading="loadingMore"
+          prepend-icon="mdi-chevron-down"
+          class="px-8 font-weight-bold text-none"
+          @click="loadMore"
+        >Cargar más</v-btn>
       </v-col>
     </v-row>
 
@@ -334,8 +396,6 @@
           image="https://vuetifyjs.b-cdn.net/docs/images/components/v-empty-state/astro-cat.svg"
           headline="Sin productos asociados"
           title="No hay productos que coincidan con esta consulta."
-          text="Puedes programar una nueva tarea para generar los datos que necesitas."
-          action-text="Crear un observatorio"
           @click:action="showCreateDialog = true"
           color="primary"
           action-color="black"
@@ -524,7 +584,7 @@
     </v-snackbar>
 
     <!-- ── Reviews ── -->
-    <v-row class="mt-6 mb-2">
+    <v-row id="resenas" class="mt-6 mb-2">
       <v-col cols="12">
         <v-card rounded="xl" elevation="2" class="border">
           <v-card-text class="pa-5 pb-3 d-flex align-center justify-space-between flex-wrap ga-2">
@@ -646,11 +706,111 @@
     </v-dialog>
 
   </v-container>
+
+  <!-- ── Observatory info drawer ── -->
+  <v-navigation-drawer
+    v-model="infoDrawer"
+    location="right"
+    temporary
+    width="360"
+  >
+    <div class="pa-5">
+      <div class="d-flex align-center justify-space-between mb-4">
+        <span class="text-subtitle-1 font-weight-bold">Info del observatorio</span>
+        <v-btn icon="mdi-close" variant="text" size="small" @click="infoDrawer = false" />
+      </div>
+
+      <template v-if="observatory">
+        <h2 class="text-h6 font-weight-black text-capitalize mb-1">{{ observatory.title }}</h2>
+        <p class="text-body-2 text-grey-darken-1 mb-4">{{ observatory.description }}</p>
+
+        <div class="d-flex align-center ga-2 mb-1">
+          <v-rating :model-value="avgRating" color="amber" density="compact" half-increments readonly size="small" />
+          <span class="text-caption text-grey-darken-1">({{ reviews.length }} reseñas)</span>
+        </div>
+
+        <v-btn
+          variant="tonal"
+          color="primary"
+          size="small"
+          prepend-icon="mdi-star-outline"
+          class="text-none mb-4"
+          block
+          @click="infoDrawer = false; scrollToReviews()"
+        >Ir a Reseñas</v-btn>
+
+        <!-- Last 5 reviews -->
+        <div v-if="reviews.length" class="mb-4">
+          <div class="text-caption font-weight-bold text-grey-darken-2 mb-2 text-uppercase" style="letter-spacing: 0.05em;">Últimas reseñas</div>
+          <div
+            v-for="review in reviews.slice(0, 5)"
+            :key="review.review_id"
+            class="mb-3 pa-3 rounded-lg bg-grey-lighten-4"
+          >
+            <div class="d-flex align-center ga-2 mb-1">
+              <v-rating :model-value="review.rating" color="amber" density="compact" size="x-small" readonly half-increments />
+              <span class="text-caption text-grey-darken-1 ml-auto">{{ getRelativeTime(review.created_at) }}</span>
+            </div>
+            <p class="text-body-2 text-grey-darken-2 mb-0" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+              {{ review.content }}
+            </p>
+          </div>
+          <v-btn
+            v-if="reviews.length > 5"
+            variant="text"
+            size="small"
+            color="primary"
+            class="text-none px-0"
+            @click="infoDrawer = false; scrollToReviews()"
+          >Ver todas ({{ reviews.length }})</v-btn>
+        </div>
+        <p v-else class="text-body-2 text-grey-darken-1 mb-4">Sin reseñas aún.</p>
+
+        <v-divider class="mb-4" />
+
+        <div v-if="observatory.services?.length" class="mb-4">
+          <div class="text-caption font-weight-bold text-grey-darken-2 mb-2 text-uppercase" style="letter-spacing: 0.05em;">Servicios</div>
+          <div class="d-flex flex-wrap ga-1">
+            <v-chip
+              v-for="svc in observatory.services"
+              :key="svc.service_id"
+              to="/external/services"
+              size="small"
+              color="primary"
+              variant="tonal"
+              class="font-weight-medium cursor-pointer"
+              prepend-icon="mdi-cog-outline"
+              @click="infoDrawer = false"
+            >{{ svc.name }}</v-chip>
+          </div>
+        </div>
+
+        <div v-if="observatory.data_sources?.length">
+          <div class="text-caption font-weight-bold text-grey-darken-2 mb-2 text-uppercase" style="letter-spacing: 0.05em;">Fuente de datos</div>
+          <div class="d-flex flex-wrap ga-1">
+            <v-chip
+              v-for="ds in observatory.data_sources"
+              :key="ds.source_id"
+              :to="`/datasources/${ds.source_id}`"
+              size="small"
+              color="teal"
+              variant="tonal"
+              class="font-weight-medium cursor-pointer"
+              prepend-icon="mdi-database-outline"
+              @click="infoDrawer = false"
+            >{{ ds.name }}</v-chip>
+          </div>
+        </div>
+      </template>
+
+      <v-skeleton-loader v-else type="article" />
+    </div>
+  </v-navigation-drawer>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed, reactive, onMounted } from 'vue';
-import { type ProductXDTO, type CatalogItemXResponseDTO, type ReviewDTO } from '@/types/index.types';
+import { type ProductXDTO, type CatalogItemXResponseDTO, type ReviewDTO, type ObservatoryDTO } from '@/types/index.types';
 import { useJubStore } from '@/stores/jub';
 import { useAppStore, SnackbarColor } from '@/stores/app';
 import { useAuthStore } from '@/stores/auth';
@@ -701,27 +861,97 @@ function resetForm() {
   operators.value = { vs: 'OR', vt: 'AND', vi: 'AND' };
 }
 
-const copiedSnack = ref(false);
+const copiedSnack   = ref(false);
+const advancedMode  = ref(false);
+const advancedQuery = ref('');
+
+function onToggleAdvanced(val: boolean | null) {
+  if (val) advancedQuery.value = computedDSL.value;
+}
+
 async function copyDSL() {
-  await navigator.clipboard.writeText(computedDSL.value);
+  await navigator.clipboard.writeText(advancedMode.value ? advancedQuery.value : computedDSL.value);
   copiedSnack.value = true;
 }
+
+// ── Observatory enriched data ─────────────────────────────────────────────────
+const observatory = ref<ObservatoryDTO | null>(null);
+const infoDrawer  = ref(false);
+
+function serviceRoute(provider: string): string {
+  if (provider === 'NEZ') return '/services/nez';
+  if (provider === 'XELHUA') return '/services/xelhua';
+  return '/external/services';
+}
+
+function scrollToReviews() {
+  document.getElementById('resenas')?.scrollIntoView({ behavior: 'smooth' });
+}
+
+function extensionIcon(ext?: string): string {
+  const e = ext?.toLowerCase() ?? '';
+  if (['fits', 'fit'].includes(e)) return 'mdi-telescope';
+  if (e === 'csv') return 'mdi-file-delimited-outline';
+  if (e === 'json') return 'mdi-code-json';
+  if (['hdf5', 'h5'].includes(e)) return 'mdi-database';
+  if (e === 'xml') return 'mdi-file-xml-box';
+  if (['png', 'jpg', 'jpeg', 'gif', 'tiff'].includes(e)) return 'mdi-image';
+  if (e === 'pdf') return 'mdi-file-pdf-box';
+  if (e === 'txt') return 'mdi-file-document-outline';
+  if (e == "html") return 'mdi-language-html5';
+  return 'mdi-file-outline';
+}
+
+// ── Tag name resolution ───────────────────────────────────────────────────────
+const tagNameMap = computed(() => {
+  const map = new Map<string, string>();
+  for (const list of Object.values(items.value)) {
+    for (const item of list) {
+      const name = item.title?.split(' (')[0] ?? 'Unknown';
+      map.set(item.value, name);
+    }
+  }
+  return map;
+});
 
 // ── Search / results ──────────────────────────────────────────────────────────
 const searchCounter    = ref(0);
 const filteredProducts = ref<ProductXDTO[]>([]);
 const viewMode         = ref<'grid' | 'table'>('grid');
-const currentPage      = 0;
-const itemsPerPage     = 10;
+const strict           = ref(false);
+const skip             = ref(0);
+const loadingMore      = ref(false);
+const canLoadMore      = ref(false);
+const pageSize         = computed(() => authStore.settings?.exploration?.items_per_page ?? 24);
 
 async function executeSearch() {
   searchCounter.value++;
+  skip.value = 0;
+  const query = advancedMode.value ? advancedQuery.value : computedDSL.value;
   filteredProducts.value = await jubStore.search(
-    computedDSL.value,
+    query,
     route.params.observatory_id as string,
-    currentPage,
-    itemsPerPage,
+    0,
+    pageSize.value,
+    strict.value,
   );
+  canLoadMore.value = filteredProducts.value.length === pageSize.value;
+}
+
+async function loadMore() {
+  loadingMore.value = true;
+  skip.value += pageSize.value;
+  const query = advancedMode.value ? advancedQuery.value : computedDSL.value;
+  const more = await jubStore.search(
+    query,
+    route.params.observatory_id as string,
+    skip.value,
+    pageSize.value,
+    strict.value,
+  );
+  filteredProducts.value.push(...more);
+  canLoadMore.value = more.length === pageSize.value;
+  loadingMore.value = false;
 }
 
 // ── Product overlay ───────────────────────────────────────────────────────────
@@ -892,11 +1122,13 @@ onMounted(async () => {
   loadReviews();
 
   loadingItems.value = true;
-  const [VS, VT, VI] = await Promise.all([
+  const [enriched, VS, VT, VI] = await Promise.all([
+    jubStore.getObservatory(obsId.value),
     jubStore.fetchCatalogItemsByType('SPATIAL'),
     jubStore.fetchCatalogItemsByType('TEMPORAL'),
     jubStore.fetchCatalogItemsByType('INTEREST'),
   ]);
+  observatory.value  = enriched;
   items.value        = { VS, VT, VI };
   loadingItems.value = false;
   await executeSearch();

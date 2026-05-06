@@ -148,7 +148,7 @@
               <template v-slot:prepend>
                 <v-icon color="grey-darken-2">mdi-format-list-numbered</v-icon>
               </template>
-              <v-list-item-title class="font-weight-medium">Observatorios por página</v-list-item-title>
+              <v-list-item-title class="font-weight-medium">Elementos por página</v-list-item-title>
               <v-list-item-subtitle>Cantidad de resultados a mostrar en las búsquedas.</v-list-item-subtitle>
               
               <template v-slot:append>

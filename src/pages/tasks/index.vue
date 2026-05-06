@@ -121,6 +121,19 @@
       </v-list>
     </v-card>
 
+    <!-- Load more -->
+    <div v-if="canLoadMore" class="d-flex justify-center mt-6">
+      <v-btn
+        variant="tonal"
+        color="primary"
+        rounded="pill"
+        :loading="loadingMore"
+        prepend-icon="mdi-chevron-down"
+        class="px-8 font-weight-bold text-none"
+        @click="loadMore"
+      >Cargar más</v-btn>
+    </div>
+
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000" rounded="lg">
       {{ snackbar.text }}
     </v-snackbar>
@@ -128,8 +141,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useJubStore } from '@/stores/jub';
+import { useAuthStore } from '@/stores/auth';
 import type { TaskXDTO, TasksStatsDTO } from '@/types/index.types';
 
 definePage({
@@ -140,11 +154,16 @@ definePage({
   },
 });
 
-const jubStore = useJubStore();
-const tasks = ref<TaskXDTO[]>([]);
-const stats = ref<TasksStatsDTO>({ pending: 0, running: 0, success: 0, failed: 0 });
+const jubStore   = useJubStore();
+const authStore  = useAuthStore();
+const tasks      = ref<TaskXDTO[]>([]);
+const stats      = ref<TasksStatsDTO>({ pending: 0, running: 0, success: 0, failed: 0 });
 const retryingId = ref<string | null>(null);
-const snackbar = ref({ show: false, text: '', color: 'success' });
+const snackbar   = ref({ show: false, text: '', color: 'success' });
+const skip        = ref(0);
+const loadingMore = ref(false);
+const canLoadMore = ref(false);
+const pageSize    = computed(() => authStore.settings?.exploration?.items_per_page ?? 20);
 
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
@@ -173,12 +192,23 @@ const formatDate = (dateString: string) => {
 };
 
 async function loadTasks() {
+  skip.value = 0;
   const [taskList, taskStats] = await Promise.all([
-    jubStore.fetchTasks(),
+    jubStore.fetchTasks(0, pageSize.value),
     jubStore.fetchTasksStats(),
   ]);
   tasks.value = taskList;
   stats.value = taskStats;
+  canLoadMore.value = taskList.length === pageSize.value;
+}
+
+async function loadMore() {
+  loadingMore.value = true;
+  skip.value += pageSize.value;
+  const more = await jubStore.fetchTasks(skip.value, pageSize.value);
+  tasks.value.push(...more);
+  canLoadMore.value = more.length === pageSize.value;
+  loadingMore.value = false;
 }
 
 async function handleRetry(taskId: string) {

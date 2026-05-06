@@ -6,8 +6,12 @@ console.log('Current route:', route.path);
 console.log('Route object:', route.name);
 const colorsMap: Record<string, string> = {
     "MictlanX": "black",
-    "Xelhua": "red",
-    "Nez": "blue",
+    "Xelhua": "#B71C1C",
+    "Nez": "#1A237E",
+    "IMA": "#1B5E20",
+    "Alerta": "#BF360C",
+    "Azomalli": "#4A148C",
+    "Kaexla": "#3E2723",
 };
 
 </script>

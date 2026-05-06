@@ -15,7 +15,7 @@
         <v-card rounded="xl" elevation="3" class="border">
           <v-card-text class="pa-6">
 
-            <v-row>
+            <v-row v-if="!advancedMode">
 
               <!-- ── VS: Espacio ── -->
               <v-col cols="12" md="4">
@@ -23,7 +23,7 @@
                   <v-avatar color="blue" variant="tonal" size="28" rounded="lg">
                     <v-icon size="16">mdi-map-marker-outline</v-icon>
                   </v-avatar>
-                  <span class="text-subtitle-2 font-weight-bold">Región geográfica</span>
+                  <span class="text-subtitle-2 font-weight-bold">Variable Espacial</span>
                   <v-chip size="x-small" color="blue" variant="tonal" class="font-monospace font-weight-black">VS</v-chip>
                   <v-tooltip location="top" max-width="280" text="Filtra por entidad, estado o país. Selecciona una o varias regiones de la lista.">
                     <template #activator="{ props: tp }">
@@ -75,7 +75,7 @@
                   <v-avatar color="teal" variant="tonal" size="28" rounded="lg">
                     <v-icon size="16">mdi-calendar-outline</v-icon>
                   </v-avatar>
-                  <span class="text-subtitle-2 font-weight-bold">Período de tiempo</span>
+                  <span class="text-subtitle-2 font-weight-bold">Variable Temporal</span>
                   <v-chip size="x-small" color="teal" variant="tonal" class="font-monospace font-weight-black">VT</v-chip>
                   <v-tooltip location="top" max-width="280" text="Filtra por año o período. Se envía el código numérico del período (ej: 2024).">
                     <template #activator="{ props: tp }">
@@ -126,7 +126,7 @@
                   <v-avatar color="green" variant="tonal" size="28" rounded="lg">
                     <v-icon size="16">mdi-tag-outline</v-icon>
                   </v-avatar>
-                  <span class="text-subtitle-2 font-weight-bold">Categoría de interés</span>
+                  <span class="text-subtitle-2 font-weight-bold">Variable de Interés</span>
                   <v-chip size="x-small" color="green" variant="tonal" class="font-monospace font-weight-black">VI</v-chip>
                   <v-tooltip location="top" max-width="280" text="Variables de clasificación como sexo, grupo de edad, diagnóstico, etc.">
                     <template #activator="{ props: tp }">
@@ -173,6 +173,19 @@
 
             </v-row>
 
+            <v-textarea
+              v-else
+              v-model="advancedQuery"
+              label="Consulta DSL"
+              placeholder="jub.v1.VS(*).VT(*).VI(*)"
+              variant="outlined"
+              density="comfortable"
+              rows="3"
+              hide-details
+              class="font-monospace"
+              hint="Escribe directamente la consulta DSL."
+            />
+
             <v-divider class="my-5" />
 
             <!-- Bottom bar: DSL + actions -->
@@ -185,12 +198,36 @@
                 <code
                   class="text-caption font-monospace px-2 py-1 rounded-lg text-primary text-truncate"
                   style="background: rgba(var(--v-theme-primary), .08); max-width: 380px; display: block;"
-                >{{ computedDSL }}</code>
+                >{{ advancedMode ? advancedQuery : computedDSL }}</code>
                 <v-btn icon="mdi-content-copy" variant="text" size="x-small" color="grey" @click="copyDSL" />
               </div>
 
               <!-- Actions -->
-              <div class="d-flex ga-2 align-center flex-shrink-0">
+              <div class="d-flex ga-2 align-center flex-shrink-0 flex-wrap">
+                <v-switch
+                  v-model="advancedMode"
+                  label="Modo avanzado"
+                  density="compact"
+                  hide-details
+                  color="primary"
+                  class="flex-shrink-0"
+                  @update:model-value="onToggleAdvanced"
+                />
+                <div class="d-flex align-center ga-1">
+                  <v-checkbox
+                    v-model="strict"
+                    label="Búsqueda estricta"
+                    density="compact"
+                    hide-details
+                    color="primary"
+                    class="flex-shrink-0"
+                  />
+                  <v-tooltip location="top" max-width="300" text="En modo estricto todos los términos de la consulta deben coincidir exactamente con los datos del observatorio.">
+                    <template #activator="{ props: tp }">
+                      <v-icon v-bind="tp" size="16" color="grey-lighten-1" class="cursor-help">mdi-help-circle-outline</v-icon>
+                    </template>
+                  </v-tooltip>
+                </div>
                 <v-btn
                   variant="text"
                   color="grey-darken-1"
@@ -278,7 +315,13 @@
         :key="obs.observatory_id"
         cols="12" sm="6" md="4"
       >
-        <ObservatoryCard :observatory="obs" @show-details="goToDetails" class="h-100" />
+        <ObservatoryCard
+          :observatory="obs"
+          :stats="statsMap.get(obs.observatory_id)"
+          :stats-loading="statsLoading"
+          @show-details="goToDetails"
+          class="h-100"
+        />
       </v-col>
     </v-row>
 
@@ -288,6 +331,21 @@
         <v-card rounded="xl" elevation="2" class="overflow-hidden border">
           <ObservatoryTables :items="filteredObservatories" @show-details="goToDetails" />
         </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Load more -->
+    <v-row v-if="canLoadMore && !jubStore.isLoading" justify="center" class="mt-6">
+      <v-col cols="auto">
+        <v-btn
+          variant="tonal"
+          color="primary"
+          rounded="pill"
+          :loading="loadingMore"
+          prepend-icon="mdi-chevron-down"
+          class="px-8 font-weight-bold text-none"
+          @click="loadMore"
+        >Cargar más</v-btn>
       </v-col>
     </v-row>
 
@@ -337,8 +395,9 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue';
-import { type ObservatoryDTO } from '@/types/index.types';
+import { type ObservatoryDTO, type ObservatoryStatsDTO } from '@/types/index.types';
 import { useJubStore } from '@/stores/jub';
+import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
 
 definePage({
@@ -346,8 +405,9 @@ definePage({
   meta: { requiresAuth: true, layout: 'dashboard' },
 });
 
-const router   = useRouter();
-const jubStore = useJubStore();
+const router    = useRouter();
+const jubStore  = useJubStore();
+const authStore = useAuthStore();
 
 const showCreateDialog      = ref(false);
 const filteredObservatories = ref<ObservatoryDTO[]>([]);
@@ -355,7 +415,15 @@ const viewMode              = ref<'grid' | 'table'>('grid');
 const searchCounter         = ref(0);
 const loadingItems          = ref(false);
 const copiedSnack           = ref(false);
-
+const strict                = ref(false);
+const advancedMode          = ref(false);
+const advancedQuery         = ref('');
+const statsLoading          = ref(false);
+const statsMap              = ref(new Map<string, ObservatoryStatsDTO>());
+const skip                  = ref(0);
+const loadingMore           = ref(false);
+const canLoadMore           = ref(false);
+const pageSize              = computed(() => authStore.settings?.exploration?.items_per_page ?? 12);
 const items = ref<Record<'VS' | 'VT' | 'VI', Array<{ title: string; value: string }>>>({
   VS: [], VT: [], VI: [],
 });
@@ -381,8 +449,12 @@ const computedDSL = computed(() => {
 });
 
 async function copyDSL() {
-  await navigator.clipboard.writeText(computedDSL.value);
+  await navigator.clipboard.writeText(advancedMode.value ? advancedQuery.value : computedDSL.value);
   copiedSnack.value = true;
+}
+
+function onToggleAdvanced(val: boolean | null) {
+  if (val) advancedQuery.value = computedDSL.value;
 }
 
 function resetForm() {
@@ -392,7 +464,37 @@ function resetForm() {
 
 async function executeSearch() {
   searchCounter.value++;
-  filteredObservatories.value = await jubStore.search_observatories(computedDSL.value);
+  skip.value = 0;
+  statsMap.value = new Map();
+  const query = advancedMode.value ? advancedQuery.value : computedDSL.value;
+  filteredObservatories.value = await jubStore.search_observatories(query, strict.value, 0, pageSize.value);
+  canLoadMore.value = filteredObservatories.value.length === pageSize.value;
+  if (filteredObservatories.value.length > 0) {
+    statsLoading.value = true;
+    const ids = filteredObservatories.value.map(o => o.observatory_id);
+    const list = await jubStore.fetchObservatoryStats(ids);
+    const m = new Map<string, ObservatoryStatsDTO>();
+    for (const s of list) m.set(s.observatory_id, s);
+    statsMap.value = m;
+    statsLoading.value = false;
+  }
+}
+
+async function loadMore() {
+  loadingMore.value = true;
+  skip.value += pageSize.value;
+  const query = advancedMode.value ? advancedQuery.value : computedDSL.value;
+  const more = await jubStore.search_observatories(query, strict.value, skip.value, pageSize.value);
+  filteredObservatories.value.push(...more);
+  canLoadMore.value = more.length === pageSize.value;
+  if (more.length > 0) {
+    const ids = more.map(o => o.observatory_id);
+    const list = await jubStore.fetchObservatoryStats(ids);
+    const m = new Map(statsMap.value);
+    for (const s of list) m.set(s.observatory_id, s);
+    statsMap.value = m;
+  }
+  loadingMore.value = false;
 }
 
 function goToDetails(obs: ObservatoryDTO) {

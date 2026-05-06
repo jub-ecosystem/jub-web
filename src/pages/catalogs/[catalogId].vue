@@ -59,11 +59,7 @@
             bg-color="surface"
           />
         </v-col>
-        <v-col cols="12" md="6" class="d-flex justify-end">
-          <v-btn color="black" prepend-icon="mdi-plus" rounded="lg" class="text-none font-weight-bold">
-            Nuevo Ítem
-          </v-btn>
-        </v-col>
+        <v-col cols="12" md="6" />
       </v-row>
 
       <!-- Table -->
@@ -76,7 +72,7 @@
               <th class="text-left font-weight-bold text-uppercase text-caption">Nombre / Descripción</th>
               <th class="text-left font-weight-bold text-uppercase text-caption">Tipo de Dato</th>
               <th class="text-left font-weight-bold text-uppercase text-caption">Alias Conocidos</th>
-              <th class="text-right font-weight-bold text-uppercase text-caption">Acciones</th>
+              <th />
             </tr>
           </thead>
           <tbody>
@@ -110,10 +106,7 @@
                   </span>
                 </div>
               </td>
-              <td class="text-right">
-                <v-btn icon="mdi-pencil-outline" variant="text" size="small" color="grey-darken-1" />
-                <v-btn icon="mdi-delete-outline" variant="text" size="small" color="error" />
-              </td>
+              <td />
             </tr>
           </tbody>
         </v-table>

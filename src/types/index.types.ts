@@ -69,6 +69,25 @@ export interface TasksStatsDTO {
     failed: number;
 }
 
+export interface ServiceSummaryDTO {
+  service_id: string;
+  name: string;
+  provider: string;
+}
+
+export interface DataSourceSummaryDTO {
+  source_id: string;
+  name: string;
+}
+
+export interface ObservatoryStatsDTO {
+  observatory_id: string;
+  avg_rating: number;
+  review_count: number;
+  services: ServiceSummaryDTO[];
+  data_sources: DataSourceSummaryDTO[];
+}
+
 export interface ObservatoryDTO {
     observatory_id: string
     title: string
@@ -78,6 +97,10 @@ export interface ObservatoryDTO {
     view_count: number
     created_at: string
     updated_at: string
+    services?: ServiceSummaryDTO[]
+    data_sources?: DataSourceSummaryDTO[]
+    avg_rating?: number
+    review_count?: number
 };
 
 export interface ReviewDTO {
@@ -96,6 +119,7 @@ export interface ProductXDTO {
     description: string
     tags: string[]
     attributes: string[]
+    metadata?: Record<string, string>
     created_at: string
     updated_at: string
 }
