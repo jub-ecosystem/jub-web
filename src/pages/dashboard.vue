@@ -257,7 +257,7 @@
                     />
                   </template>
                 </v-tooltip>
-                <v-btn
+                <!-- <v-btn
                   variant="text"
                   color="grey-darken-1"
                   size="small"
@@ -267,7 +267,7 @@
                   @click="resetForm"
                 >
                   Limpiar
-                </v-btn>
+                </v-btn> -->
                 <v-btn
                   color="primary"
                   variant="flat"
@@ -305,7 +305,7 @@
 
     <!-- ── Búsquedas populares ── -->
     <v-row v-if="loadingObsSuggestions || obsSuggestions.length > 0" class="mt-2 mb-2">
-      <v-col cols="12" lg="10" class="mx-auto" data-tour="dash-suggestions">
+      <v-col cols="12" lg="10" class="" data-tour="dash-suggestions">
         <div class="d-flex align-center ga-2 mb-3">
           <v-icon size="18" color="grey-darken-2">mdi-trending-up</v-icon>
           <span class="text-caption font-weight-bold text-grey-darken-2 text-uppercase" style="letter-spacing: .06em;">Búsquedas populares</span>

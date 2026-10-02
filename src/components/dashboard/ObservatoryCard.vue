@@ -59,6 +59,7 @@
             variant="tonal"
             class="font-weight-medium"
             prepend-icon="mdi-cog-outline"
+            :to="{ path: '/external/services', query: { service_id: svc.service_id } }"
           >{{ svc.name }}</v-chip>
         </div>
         <div v-if="stats?.data_sources?.length" class="d-flex flex-wrap ga-1 mt-1">
@@ -68,7 +69,10 @@
             variant="tonal"
             class="font-weight-medium"
             prepend-icon="mdi-database-outline"
-          >{{ stats?.data_sources?.[0]?.name }}</v-chip>
+            :to="`/datasources/${stats?.data_sources?.[0]?.source_id}`"
+          >
+          {{ stats?.data_sources?.[0]?.name }}
+        </v-chip>
         </div>
       </template>
     </v-card-item>

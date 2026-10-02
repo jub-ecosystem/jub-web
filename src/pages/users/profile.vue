@@ -48,14 +48,9 @@
     <v-row justify="center" class="mt-10">
       <v-col cols="12" md="10" lg="10">
         
-        <div class="d-flex align-center justify-space-between mb-6">
-          <div>
-            <h2 class="text-h5 font-weight-bold">Exploración Destacada</h2>
-            <p class="text-body-2 text-grey-darken-1">Los observatorios y productos mejor valorados de la comunidad.</p>
-          </div>
-          <v-btn :to="{'name':'Dashboard'}" variant="text" color="primary" append-icon="mdi-arrow-right" class="text-none font-weight-bold">
-            Ver todo
-          </v-btn>
+        <div class="mb-6">
+          <h2 class="text-h5 font-weight-bold">Mis observatorios</h2>
+          <p class="text-body-2 text-grey-darken-1">Administra la visibilidad de tus observatorios.</p>
         </div>
 
         <!-- Loading -->
@@ -65,8 +60,13 @@
           </v-col>
         </v-row>
 
-        <v-row v-else>
-          <v-col v-for="obs in topObservatories" :key="obs.observatory_id" cols="12" sm="6" md="4">
+        <p v-else-if="observatories.length === 0" class="text-body-1 text-grey-darken-1 text-center my-6">
+          Aún no tienes observatorios.
+        </p>
+
+        <template v-else>
+        <v-row>
+          <v-col v-for="obs in observatories" :key="obs.observatory_id" cols="12" sm="6" md="4">
             <v-hover v-slot="{ isHovering, props }">
               <v-card
                 v-bind="props"
@@ -80,6 +80,7 @@
                   height="200"
                   cover
                   class="align-end"
+                  :class="{ 'obs-disabled': obs.is_disabled }"
                 >
                   <v-overlay
                     :model-value="isHovering ?? false"
@@ -93,11 +94,12 @@
                   </v-overlay>
 
                   <v-chip
-                    color="secondary-blue"
+                    :color="obs.is_disabled ? 'grey' : 'success'"
+                    variant="flat"
                     size="small"
-                    class="ma-3 font-weight-bold text-white position-absolute top-0 right-0"
+                    class="ma-3 font-weight-bold position-absolute top-0 right-0"
                   >
-                    Observatorio
+                    {{ obs.is_disabled ? 'Deshabilitado' : 'Publicado' }}
                   </v-chip>
                 </v-img>
 
@@ -107,26 +109,70 @@
                   </v-card-title>
                 </v-card-item>
 
-                <v-card-text class="d-flex align-center pb-4 pt-1">
+                <v-card-text class="d-flex align-center pb-0 pt-1">
                   <v-icon size="16" color="grey-darken-1">mdi-eye-outline</v-icon>
                   <span class="text-caption text-grey-darken-1 ml-1 font-weight-medium">
                     {{ obs.view_count ?? 0 }} vistas
                   </span>
                 </v-card-text>
+
+                <v-card-actions class="px-4 pb-3">
+                  <div @click.stop>
+                    <v-switch
+                      :model-value="!obs.is_disabled"
+                      label="Publicado"
+                      inset
+                      density="compact"
+                      hide-details
+                      color="success"
+                      :loading="toggling[obs.observatory_id] ? 'success' : false"
+                      :disabled="toggling[obs.observatory_id]"
+                      @update:model-value="(v) => onToggle(obs, !!v)"
+                    />
+                  </div>
+                </v-card-actions>
               </v-card>
             </v-hover>
           </v-col>
         </v-row>
 
+        <div v-if="hasMore" class="d-flex justify-center mt-6">
+          <v-btn
+            variant="tonal"
+            color="primary"
+            rounded="pill"
+            class="text-none font-weight-bold"
+            :loading="loadingMore"
+            @click="loadMore"
+          >
+            Ver más
+          </v-btn>
+        </div>
+        </template>
+
       </v-col>
     </v-row>
+
+    <v-dialog :model-value="pendingDisable !== null" max-width="400" @update:model-value="(v) => { if (!v) pendingDisable = null }">
+      <v-card rounded="xl">
+        <v-card-text class="pt-6">
+          ¿Deshabilitar este observatorio? Dejará de aparecer en las búsquedas.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" class="text-none" @click="pendingDisable = null">Cancelar</v-btn>
+          <v-btn color="error" variant="flat" class="text-none" @click="confirmDisable">Deshabilitar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, reactive, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth';
-import { useJubStore } from '@/stores/jub';
+import { useJubStore, JubApiError } from '@/stores/jub';
+import { useAppStore, SnackbarColor } from '@/stores/app';
 import { useRouter } from 'vue-router';
 import type { ObservatoryDTO } from '@/types/index.types';
 
@@ -140,6 +186,7 @@ definePage({
 
 const authStore = useAuthStore();
 const jubStore  = useJubStore();
+const appStore  = useAppStore();
 const router    = useRouter();
 
 const currentUser = computed(() => authStore.getUser());
@@ -150,20 +197,83 @@ const fullName = computed(() => {
   return `${first} ${last}`.trim() || 'Usuario Desconocido';
 });
 
-const loadingObs      = ref(false);
-const topObservatories = ref<ObservatoryDTO[]>([]);
+const PAGE_SIZE = 12;
+
+const loadingObs    = ref(false);
+const loadingMore   = ref(false);
+const observatories = ref<ObservatoryDTO[]>([]);
+const pageIndex     = ref(0);
+const hasMore       = ref(false);
+
+const toggling       = reactive<Record<string, boolean>>({});
+const pendingDisable = ref<ObservatoryDTO | null>(null);
 
 const goToItem = (obs: ObservatoryDTO) => {
   router.push({ name: 'ObservatoryDetails', params: { observatory_id: obs.observatory_id } });
 };
 
+async function loadPage(index: number) {
+  const page = await jubStore.get_observatories(index, PAGE_SIZE);
+  const known = new Set(observatories.value.map(o => o.observatory_id));
+  observatories.value.push(...page.filter(o => !known.has(o.observatory_id)));
+  pageIndex.value = index;
+  hasMore.value = page.length === PAGE_SIZE;
+}
+
+async function loadMore() {
+  loadingMore.value = true;
+  try {
+    await loadPage(pageIndex.value + 1);
+  } finally {
+    loadingMore.value = false;
+  }
+}
+
+function onToggle(obs: ObservatoryDTO, published: boolean) {
+  if (published) {
+    applyStatus(obs, false);
+  } else {
+    pendingDisable.value = obs;
+  }
+}
+
+function confirmDisable() {
+  const obs = pendingDisable.value;
+  pendingDisable.value = null;
+  if (obs) applyStatus(obs, true);
+}
+
+async function applyStatus(obs: ObservatoryDTO, isDisabled: boolean) {
+  const id = obs.observatory_id;
+  toggling[id] = true;
+  try {
+    const updated = await jubStore.setObservatoryStatus(id, isDisabled);
+    const idx = observatories.value.findIndex(o => o.observatory_id === id);
+    if (idx !== -1) observatories.value[idx] = { ...observatories.value[idx], ...updated };
+    appStore.showSnackbar(
+      isDisabled ? 'Observatorio deshabilitado.' : 'Observatorio publicado.',
+      3000,
+      SnackbarColor.SUCCESS,
+    );
+  } catch (e) {
+    const status = e instanceof JubApiError ? e.status : 0;
+    const message =
+      status === 409 ? 'La configuración del observatorio aún no ha terminado.' :
+      status === 403 ? 'Solo el propietario puede cambiar el estado del observatorio.' :
+      'No se pudo actualizar el estado del observatorio.';
+    appStore.showSnackbar(message, 4000, SnackbarColor.ERROR);
+  } finally {
+    toggling[id] = false;
+  }
+}
+
 onMounted(async () => {
   loadingObs.value = true;
-  const all = await jubStore.get_observatories();
-  topObservatories.value = all
-    .sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0))
-    .slice(0, 10);
-  loadingObs.value = false;
+  try {
+    await loadPage(0);
+  } finally {
+    loadingObs.value = false;
+  }
 });
 </script>
 
@@ -184,5 +294,10 @@ onMounted(async () => {
 }
 .gallery-card:hover {
   transform: translateY(-4px);
+}
+
+/* Observatorios deshabilitados: solo se atenúa la imagen, el chip sigue legible */
+.obs-disabled :deep(.v-img__img) {
+  opacity: 0.5;
 }
 </style>

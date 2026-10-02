@@ -10,13 +10,14 @@ const assistantStore = useAssistantStore()
     v-model="assistantStore.isOpen"
     fullscreen
     transition="dialog-bottom-transition"
+    eager
   >
     <v-card class="d-flex flex-column" style="height: 100%">
       <!-- Sticky toolbar -->
       <v-toolbar color="primary" density="compact" flat>
         <!-- <v-img :src="logoUrl" width="24" height="24" class="ml-3 mr-2 flex-shrink-0" /> -->
         <v-icon class="ml-3 mr-1 flex-shrink-0" size="24" color="white">
-          mdi-robot
+          mdi-robot-happy
         </v-icon>
         <div class="text-subtitle-1 font-weight-bold d-flex align-center px-4">
           <span>Asistente Jub</span>

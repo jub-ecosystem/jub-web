@@ -20,6 +20,14 @@
             data-tour="obs-details-btn"
             @click="infoDrawer = true"
           >Ver detalles del observatorio</v-btn>
+          <v-chip
+            v-if="observatory?.is_disabled"
+            color="grey"
+            variant="flat"
+            size="small"
+            prepend-icon="mdi-eye-off-outline"
+            class="font-weight-bold mt-2 ml-2"
+          >Deshabilitado</v-chip>
         </div>
 
         <v-card rounded="xl" elevation="3" class="border">
@@ -287,7 +295,7 @@
                 </v-tooltip>
 
                 <!-- Actions -->
-                <v-btn
+                <!-- <v-btn
                   variant="text"
                   color="grey-darken-1"
                   size="small"
@@ -297,7 +305,7 @@
                   @click="resetForm"
                 >
                   Limpiar
-                </v-btn>
+                </v-btn> -->
                 <v-btn
                   data-v-step="6"
                   color="primary"
@@ -480,19 +488,53 @@
 
             <v-card-text class="flex-grow-1">
               <div class="d-flex flex-wrap ga-1">
-                <v-chip
-                  v-for="tag in product.tags?.slice(0, 3) || []"
-                  :key="tag"
-                  size="x-small"
-                  variant="tonal"
-                  color="secondary-blue"
-                  class="font-weight-medium"
-                >
-                  {{ tagIdToNameMap.get(tag) ?? tagNameMap.get(tag) ?? tag }}
-                </v-chip>
-                <span v-if="(product.tags?.length || 0) > 3" class="text-caption text-grey-darken-1 ml-1 align-self-center">
-                  +{{ product.tags!.length - 3 }}
-                </span>
+                <template v-if="product.tags?.length">
+                  <!-- Loading skeleton -->
+                  <template v-if="!tagFetchState[product.product_id] || tagFetchState[product.product_id] === 'loading'">
+                    <v-chip
+                      v-for="i in Math.min(product.tags.length, 3)"
+                      :key="i"
+                      size="x-small"
+                      variant="tonal"
+                      color="grey-lighten-2"
+                      class="tag-skeleton"
+                    >&#8203;</v-chip>
+                  </template>
+
+                  <!-- Failed — single retry chip -->
+                  <v-hover v-else-if="tagFetchState[product.product_id] === 'failed'" v-slot="{ isHovering, props: hp }">
+                    <v-chip
+                      v-bind="hp"
+                      size="x-small"
+                      variant="tonal"
+                      :color="isHovering ? 'primary' : 'grey'"
+                      class="font-weight-medium"
+                      style="cursor: pointer"
+                      @click.stop="retryTagFetch(product.product_id)"
+                    >
+                      <v-icon v-if="isHovering" size="10" start>mdi-refresh</v-icon>
+                      {{ isHovering ? 'Reintentar' : '···' }}
+                    </v-chip>
+                  </v-hover>
+
+                  <!-- Resolved -->
+                  <template v-else>
+                    <v-chip
+                      v-for="tag in product.tags.slice(0, 3)"
+                      :key="tag"
+                      size="x-small"
+                      variant="tonal"
+                      color="secondary-blue"
+                      class="font-weight-medium"
+                    >
+                      {{ tagIdToNameMap.get(tag) ?? tagNameMap.get(tag) ?? tag }}
+                    </v-chip>
+                  </template>
+
+                  <span v-if="product.tags.length > 3" class="text-caption text-grey-darken-1 ml-1 align-self-center">
+                    +{{ product.tags.length - 3 }}
+                  </span>
+                </template>
               </div>
               <v-chip
                 v-if="crossSearch && product.observatory_id"
@@ -568,17 +610,48 @@
             <template #item.tags="{ item }">
               <div class="d-flex flex-wrap ga-1 py-1">
                 <template v-if="item.tags?.length">
-                  <v-chip
-                    v-for="tag in item.tags.slice(0, 4)"
-                    :key="tag"
-                    size="x-small"
-                    variant="tonal"
-                    color="secondary-blue"
-                    class="font-weight-medium"
-                  >
-                    {{ tagIdToNameMap.get(tag) ?? tagNameMap.get(tag) ?? tag }}
-                  </v-chip>
-                  <span v-if="item.tags.length > 4" class="text-caption text-grey-darken-1 align-self-center">+{{ item.tags.length - 4 }}</span>
+                  <!-- Loading skeleton -->
+                  <template v-if="!tagFetchState[item.product_id] || tagFetchState[item.product_id] === 'loading'">
+                    <v-chip
+                      v-for="i in Math.min(item.tags.length, 4)"
+                      :key="i"
+                      size="x-small"
+                      variant="tonal"
+                      color="grey-lighten-2"
+                      class="tag-skeleton"
+                    >&#8203;</v-chip>
+                  </template>
+
+                  <!-- Failed — single retry chip -->
+                  <v-hover v-else-if="tagFetchState[item.product_id] === 'failed'" v-slot="{ isHovering, props: hp }">
+                    <v-chip
+                      v-bind="hp"
+                      size="x-small"
+                      variant="tonal"
+                      :color="isHovering ? 'primary' : 'grey'"
+                      class="font-weight-medium"
+                      style="cursor: pointer"
+                      @click.stop="retryTagFetch(item.product_id)"
+                    >
+                      <v-icon v-if="isHovering" size="10" start>mdi-refresh</v-icon>
+                      {{ isHovering ? 'Reintentar' : '···' }}
+                    </v-chip>
+                  </v-hover>
+
+                  <!-- Resolved -->
+                  <template v-else>
+                    <v-chip
+                      v-for="tag in item.tags.slice(0, 4)"
+                      :key="tag"
+                      size="x-small"
+                      variant="tonal"
+                      color="secondary-blue"
+                      class="font-weight-medium"
+                    >
+                      {{ tagIdToNameMap.get(tag) ?? tagNameMap.get(tag) ?? tag }}
+                    </v-chip>
+                    <span v-if="item.tags.length > 4" class="text-caption text-grey-darken-1 align-self-center">+{{ item.tags.length - 4 }}</span>
+                  </template>
                 </template>
                 <span v-else class="text-caption text-grey">–</span>
               </div>
@@ -886,15 +959,26 @@
               </v-col>
 
               <v-col cols="12" md="6" data-tour="overlay-dsl-tags">
-                <h2 class="text-h5 font-weight-bold mb-4 text-grey-darken-4">Parámetros de Consulta (DSL)</h2>
-                <v-sheet
-                  color="grey-lighten-4"
-                  rounded="lg"
-                  class="pa-4 mb-8 text-body-1 text-grey-darken-2"
-                  style="font-family: monospace;"
-                >
-                  {{ productDSL }}
-                </v-sheet>
+                <h2 class="text-h5 font-weight-bold mb-4 text-grey-darken-4">Parámetros de Consulta</h2>
+                <v-tooltip text="Clic para copiar" location="top">
+                  <template #activator="{ props: tooltipProps }">
+                    <v-sheet
+                      v-bind="tooltipProps"
+                      v-ripple
+                      color="grey-lighten-4"
+                      rounded="lg"
+                      class="pa-4 mb-8 text-body-1 text-grey-darken-2 d-flex align-start ga-2 cursor-pointer"
+                      style="font-family: monospace;"
+                      role="button"
+                      tabindex="0"
+                      @click="copyProductDSL"
+                      @keydown.enter="copyProductDSL"
+                    >
+                      <span class="flex-grow-1 text-break">{{ productDSL }}</span>
+                      <v-icon size="small" color="grey">mdi-content-copy</v-icon>
+                    </v-sheet>
+                  </template>
+                </v-tooltip>
 
                 <h2 class="text-h5 font-weight-bold mt-6 mb-4 text-grey-darken-4">Etiquetas</h2>
                 <div class="d-flex flex-wrap ga-2">
@@ -1380,6 +1464,16 @@ async function copyDSL() {
   copiedSnack.value = true;
 }
 
+async function copyProductDSL() {
+  if (!productDSL.value) return;
+  try {
+    await navigator.clipboard.writeText(productDSL.value);
+    copiedSnack.value = true;
+  } catch {
+    appStore.showSnackbar('No se pudo copiar la consulta', 3000, SnackbarColor.ERROR);
+  }
+}
+
 // ── Observatory enriched data ─────────────────────────────────────────────────
 const observatory = ref<ObservatoryDTO | null>(null);
 const infoDrawer  = ref(false);
@@ -1585,11 +1679,39 @@ const currentProduct = computed(() => filteredProducts.value[currentIndex.value]
 
 // Tag details fetched from GET /products/{id}/tags/details, keyed by product_id.
 const tagDetailsCache = reactive<Record<string, CatalogItemXResponseDTO[]>>({});
+const tagFetchState   = reactive<Record<string, 'loading' | 'done' | 'failed'>>({});
+const tagRetryCount   = reactive<Record<string, number>>({});
+const MAX_TAG_RETRIES = 3;
 
 const fetchTagDetailsIfNeeded = async (productId: string) => {
-  if (!(productId in tagDetailsCache)) {
-    tagDetailsCache[productId] = await jubStore.fetchProductTagDetails(productId);
+  if (productId in tagDetailsCache) return;
+  if (tagFetchState[productId] === 'loading') return;
+  if (tagFetchState[productId] === 'failed')  return;
+
+  tagFetchState[productId] = 'loading';
+  const result = await jubStore.fetchProductTagDetails(productId);
+
+  if (result !== null) {
+    tagDetailsCache[productId] = result;
+    tagFetchState[productId]   = 'done';
+  } else {
+    const attempts = (tagRetryCount[productId] ?? 0) + 1;
+    tagRetryCount[productId] = attempts;
+    if (attempts >= MAX_TAG_RETRIES) {
+      tagFetchState[productId] = 'failed';
+    } else {
+      delete tagFetchState[productId];
+      setTimeout(() => fetchTagDetailsIfNeeded(productId), 800 * attempts);
+    }
   }
+};
+
+const retryTagFetch = (productId: string) => {
+  jubStore.clearProductTagCache(productId);
+  delete tagDetailsCache[productId];
+  tagRetryCount[productId] = 0;
+  delete tagFetchState[productId];
+  fetchTagDetailsIfNeeded(productId);
 };
 
 // Reverse map: raw item value → prefixed DSL value (e.g. 'MALE' → 'SEX.MALE')
@@ -1911,6 +2033,15 @@ onMounted(async () => {
 
 <style scoped>
 .cursor-help { cursor: help; }
+
+.tag-skeleton {
+  min-width: 48px;
+  animation: tag-pulse 1.4s ease-in-out infinite;
+}
+@keyframes tag-pulse {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 0.7; }
+}
 
 div[id^="container-"]:fullscreen {
   width: 100vw !important;

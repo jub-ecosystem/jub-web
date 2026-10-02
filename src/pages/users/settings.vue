@@ -22,7 +22,7 @@
             General
           </v-card-title>
           <v-list lines="two" bg-color="transparent">
-            <v-list-item>
+            <v-list-item disabled>
               <template v-slot:prepend>
                 <v-icon color="grey-darken-2">mdi-account-circle-outline</v-icon>
               </template>
@@ -32,7 +32,7 @@
 
             <v-divider inset></v-divider>
 
-            <v-list-item>
+            <v-list-item disabled>
               <template v-slot:prepend>
                 <v-icon color="grey-darken-2">mdi-bell-outline</v-icon>
               </template>
@@ -106,7 +106,7 @@
 
             <v-divider inset></v-divider>
 
-            <v-list-item>
+            <v-list-item disabled>
               <template v-slot:prepend>
                 <v-icon color="grey-darken-2" class="mt-2">mdi-format-font-size</v-icon>
               </template>
@@ -126,11 +126,11 @@
               </template>
             </v-list-item>
             <v-divider inset></v-divider>
-            <v-list-item>
+            <v-list-item disabled>
               <template v-slot:prepend>
                 <v-icon color="grey-darken-2" class="mt-2">mdi-animation-outline</v-icon>
               </template>
-              <v-list-item-title class="font-weight-medium">Reducir animaciones</v-list-item-title>
+              <v-list-item-title  class="font-weight-medium">Reducir animaciones</v-list-item-title>
               <v-list-item-subtitle>Mejora el rendimiento en equipos con menos recursos.</v-list-item-subtitle>
               
               <template v-slot:append>

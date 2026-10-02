@@ -95,6 +95,7 @@ export interface ObservatoryDTO {
     image_url: string
     metadata: Record<string, string>
     view_count: number
+    is_disabled: boolean
     created_at: string
     updated_at: string
     services?: ServiceSummaryDTO[]
@@ -221,6 +222,22 @@ export interface CatalogSummaryDTO {
   name: string;
   value: string;
   catalog_type: string;
+}
+
+
+export interface CatalogPageDTO {
+  items: CatalogSummaryDTO[];
+  total: number;
+  skip: number;
+  limit: number;
+  has_more: boolean;
+}
+
+export interface CatalogPageQuery {
+  catalog_type?: CatalogType[];
+  q?: string;
+  skip?: number;
+  limit?: number;
 }
 
 export interface CatalogItemAliasDTO {

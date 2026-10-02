@@ -138,6 +138,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore} from '@/stores/auth';
 import { type AuthAttemptDTO } from '@/types/index.types';
 import { useAppStore,SnackbarColor } from '@/stores/app';
+import { getEnv } from '@/utils/env';
 
 
 
@@ -177,7 +178,7 @@ const handleLogin = async () => {
   const usernameFormatted = username.value.trim().toLowerCase();
   
   if (usernameFormatted === 'invitado' || usernameFormatted === 'guest') {
-    password.value = import.meta.env.VITE_DEFAULT_GUEST_PASSWORD;
+    password.value = getEnv('VITE_DEFAULT_GUEST_PASSWORD');
   }
   const authAttempt:AuthAttemptDTO = {
     username: username.value,

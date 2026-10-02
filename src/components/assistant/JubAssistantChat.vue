@@ -3,8 +3,7 @@ import type { CatalogXDTO } from '@/types/index.types'
 import { useAssistantStore } from '@/stores/assistant'
 import { useJubStore } from '@/stores/jub'
 
-// Module-level cache: survives route navigation within SPA lifetime
-const _suggestionCache = new Map<string, string[]>()
+let _skipFn: (() => void) | null = null
 
 const assistantStore = useAssistantStore()
 const jubStore = useJubStore()
@@ -22,6 +21,7 @@ const catalogsFetched = ref(false)
 
 const PAGE_SIZE        = 10
 const suggestionsPage  = ref(1)
+const popularQueries   = ref<Array<{ query: string; hit_count: number }>>([])
 const generatedQueries = ref<string[]>([])
 const feedbackGiven    = ref<'useful' | 'not-useful' | null>(null)
 
@@ -42,11 +42,21 @@ function typeMessage(
     if (i >= fullText.length) {
       clearInterval(typingTimer!)
       typingTimer = null
+      _skipFn     = null
       done.value  = true
       onComplete()
     }
   }, 18)
+  _skipFn = () => {
+    if (typingTimer) { clearInterval(typingTimer); typingTimer = null }
+    target.value = fullText
+    done.value   = true
+    _skipFn      = null
+    onComplete()
+  }
 }
+
+function skipTyping() { _skipFn?.() }
 
 // ── Reset when observatory changes ────────────────────────────────────────────
 watch(() => assistantStore.obsId, () => {
@@ -58,9 +68,10 @@ watch(() => assistantStore.obsId, () => {
   catalogs.value        = []
   catalogsLoading.value = false
   catalogsFetched.value = false
-  suggestionsPage.value = 1
+  suggestionsPage.value  = 1
+  popularQueries.value   = []
   generatedQueries.value = []
-  feedbackGiven.value   = null
+  feedbackGiven.value    = null
   if (typingTimer) { clearInterval(typingTimer); typingTimer = null }
 })
 
@@ -73,7 +84,7 @@ watch(() => assistantStore.isOpen, (val) => {
 
 function startGreeting() {
   // console.log("O TITLE",assistantStore.observatoryTitle, assistantStore.obsId)
-  const msg = `¡Hola! Soy el Asistente JUB. Estoy aquí para ayudarte a explorar el observatorio "${assistantStore.observatoryTitle}" y aprovechar al máximo sus datos. 🚀`
+  const msg = `¡Hola! Soy el Asistente Jub. Estoy aquí para ayudarte a explorar el observatorio "${assistantStore.observatoryTitle}" y aprovechar al máximo sus datos. 🚀`
   typeMessage(greetingText, greetingDone, msg, () => {
     nextTick(() => { currentStep.value = 1 })
   })
@@ -105,64 +116,90 @@ watch(currentStep, async (step) => {
 })
 
 // ── Query generation ──────────────────────────────────────────────────────────
-function buildSuggestions() {
-  const cached = _suggestionCache.get(assistantStore.obsId)
-  if (cached) { generatedQueries.value = cached; return }
-  const result = generateQueriesFromPageData()
-  _suggestionCache.set(assistantStore.obsId, result)
-  generatedQueries.value = result
-}
+async function buildPopularQueries() {
+  if (popularQueries.value.length > 0) return
 
-watch(() => assistantStore.products, (val) => {
-  if (val.length > 0 && currentStep.value >= 2 && generatedQueries.value.length === 0) {
-    buildSuggestions()
+  // Phase 1: localStorage cache (shared key with observatory page)
+  const LS_KEY = `jub:suggestions:${assistantStore.obsId}`
+  const cached = localStorage.getItem(LS_KEY)
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached) as Array<{ query: string; hit_count: number }>
+      if (parsed.length) { popularQueries.value = parsed }
+    } catch { /* corrupt — fall through */ }
   }
-})
 
-function generateQueriesFromPageData(): string[] {
+  // Phase 2: fetch fresh from API
+  try {
+    const res = await jubStore.fetchSearchSuggestions(assistantStore.obsId, 8)
+    if (res?.suggestions?.length) {
+      popularQueries.value = res.suggestions
+      return
+    }
+  } catch { /* fall through to product-tag fallback */ }
+
+  // Phase 3: fallback — product-tag derived queries with frequency as hit_count
+  if (popularQueries.value.length > 0) return  // satisfied by cache already
   const vsSet = new Set(assistantStore.vsItems.map(i => i.value))
   const vtSet = new Set(assistantStore.vtItems.map(i => i.value))
   const viSet = new Set(assistantStore.viItems.map(i => i.value))
-
-  const results: string[] = []
-  const seen = new Set<string>()
-
+  const raw: string[] = []
   for (const product of assistantStore.products.slice(0, 50)) {
     const vsTags: string[] = []
     const vtTags: string[] = []
     const viTags: string[] = []
-
     for (const tag of product.tags ?? []) {
       if (vsSet.has(tag)) vsTags.push(tag)
       else if (vtSet.has(tag) || /^\d{4}$/.test(tag)) vtTags.push(tag)
       else if (viSet.has(tag) || tag.includes('.')) viTags.push(tag)
     }
-
-    const vs  = vsTags.slice(0, 2).join(' OR ') || '*'
-    const vt  = vtTags[0] || '*'
-    const vi  = viTags.slice(0, 2).join(' AND ') || '*'
-    const dsl = `jub.v1.VS(${vs}).VT(${vt}).VI(${vi})`
-
-    if (!seen.has(dsl)) { seen.add(dsl); results.push(dsl) }
+    const vs = vsTags.slice(0, 2).join(' OR ') || '*'
+    const vt = vtTags[0] || '*'
+    const vi = viTags.slice(0, 2).join(' AND ') || '*'
+    raw.push(`jub.v1.VS(${vs}).VT(${vt}).VI(${vi})`)
   }
-
-  if (results.length < 10) {
-    for (const item of assistantStore.vsItems.slice(0, 5)) {
-      const dsl = `jub.v1.VS(${item.value}).VT(*).VI(*)`
-      if (!seen.has(dsl)) { seen.add(dsl); results.push(dsl) }
-    }
-    for (const item of assistantStore.vtItems.slice(0, 5)) {
-      const dsl = `jub.v1.VS(*).VT(${item.value}).VI(*)`
-      if (!seen.has(dsl)) { seen.add(dsl); results.push(dsl) }
-    }
-    for (const item of assistantStore.viItems.slice(0, 5)) {
-      const dsl = `jub.v1.VS(*).VT(*).VI(${item.value})`
-      if (!seen.has(dsl)) { seen.add(dsl); results.push(dsl) }
-    }
-  }
-
-  return [...new Set(results)].slice(0, 50)
+  const freq = new Map<string, number>()
+  for (const dsl of raw) freq.set(dsl, (freq.get(dsl) ?? 0) + 1)
+  popularQueries.value = [...new Set(raw)]
+    .sort((a, b) => (freq.get(b) ?? 0) - (freq.get(a) ?? 0))
+    .slice(0, 50)
+    .map(q => ({ query: q, hit_count: freq.get(q) ?? 0 }))
 }
+
+function buildAdvancedQueries() {
+  const seen = new Set<string>()
+  const adv: string[] = []
+  for (const item of assistantStore.vsItems.slice(0, 5)) {
+    const dsl = `jub.v1.VS(${item.value}).VT(*).VI(*)`
+    if (!seen.has(dsl)) { seen.add(dsl); adv.push(dsl) }
+  }
+  for (const item of assistantStore.vtItems.slice(0, 4)) {
+    const dsl = `jub.v1.VS(*).VT(${item.value}).VI(*)`
+    if (!seen.has(dsl)) { seen.add(dsl); adv.push(dsl) }
+  }
+  for (const item of assistantStore.viItems.slice(0, 4)) {
+    const dsl = `jub.v1.VS(*).VT(*).VI(${item.value})`
+    if (!seen.has(dsl)) { seen.add(dsl); adv.push(dsl) }
+  }
+  generatedQueries.value = adv
+}
+
+function buildSuggestions() {
+  buildPopularQueries()   // async, fire-and-forget — spinner handles wait
+  buildAdvancedQueries()
+}
+
+watch(() => assistantStore.products, (val) => {
+  if (val.length > 0 && currentStep.value >= 2 && popularQueries.value.length === 0) {
+    buildPopularQueries()
+  }
+})
+
+watch(() => assistantStore.vsItems, (val) => {
+  if (val.length > 0 && currentStep.value >= 2 && generatedQueries.value.length === 0) {
+    buildAdvancedQueries()
+  }
+})
 
 const visibleQueries = computed(() =>
   generatedQueries.value.slice(0, suggestionsPage.value * PAGE_SIZE),
@@ -194,10 +231,12 @@ onBeforeUnmount(() => {
       rounded="xl"
       color="grey-lighten-4"
       class="pa-4 mb-4"
+      :style="!greetingDone ? 'cursor: pointer' : ''"
+      @click="skipTyping"
     >
       <div class="d-flex align-center ga-2 mb-2">
         <v-icon color="primary" size="18">mdi-robot-outline</v-icon>
-        <span class="text-caption text-medium-emphasis font-weight-medium">Asistente JUB</span>
+        <span class="text-caption text-medium-emphasis font-weight-medium">Asistente Jub</span>
       </div>
       <span :class="['typing-cursor', { done: greetingDone }]">{{ greetingText }}</span>
     </v-sheet>
@@ -258,7 +297,12 @@ onBeforeUnmount(() => {
                 variant="tonal"
                 color="teal"
                 prepend-icon="mdi-database-outline"
-              >{{ ds.name }}</v-btn>
+              >
+              <span class="text-truncate" style="max-width: 280px; display: inline-block">
+              {{ ds.name }}
+              
+              </span>
+            </v-btn>
               <v-btn
                 v-for="svc in assistantStore.services"
                 :key="svc.service_id"
@@ -267,7 +311,11 @@ onBeforeUnmount(() => {
                 variant="tonal"
                 color="primary"
                 prepend-icon="mdi-cog-outline"
-              >{{ svc.name }}</v-btn>
+              >
+              <span class="text-truncate" style="max-width: 320px; display: inline-block">
+              {{ svc.name }}
+              </span>
+            </v-btn>
               <v-btn
                 to="/guides/query"
                 size="x-small"
@@ -281,23 +329,68 @@ onBeforeUnmount(() => {
       </v-sheet>
     </template>
 
-    <!-- Step 2: Query suggestions -->
+    <!-- Step 2a: Popular queries -->
     <template v-if="currentStep >= 2">
       <v-sheet rounded="xl" color="grey-lighten-4" class="pa-4 mb-4">
         <div class="d-flex align-center ga-2 mb-3">
-          <v-icon color="primary" size="18">mdi-lightbulb-outline</v-icon>
+          <v-icon color="primary" size="18">mdi-star-outline</v-icon>
+          <span class="text-caption text-medium-emphasis font-weight-medium">Búsquedas populares</span>
+        </div>
+
+        <div v-if="popularQueries.length === 0" class="d-flex align-center ga-3 py-2">
+          <v-progress-circular indeterminate color="primary" size="20" width="2" />
+          <span class="text-body-2 text-medium-emphasis">Generando sugerencias…</span>
+        </div>
+
+        <template v-else>
+          <div
+            v-for="(item, index) in popularQueries"
+            :key="item.query"
+            class="query-item mb-2"
+            :style="{ animationDelay: `${index * 60}ms` }"
+          >
+            <v-sheet
+              rounded="lg"
+              color="white"
+              class="pa-2 px-3 d-flex align-center ga-2 query-chip"
+              style="border: 1px solid rgba(0,171,220,0.2); cursor: pointer"
+              @click="applyQuery(item.query)"
+            >
+              <v-icon size="14" color="primary">mdi-magnify</v-icon>
+              <code class="text-caption flex-grow-1" style="font-family: monospace; word-break: break-all">
+                {{ item.query.length > 42 ? item.query.slice(0, 42) + '…' : item.query }}
+              </code>
+              <v-chip v-if="item.hit_count > 0" size="x-small" variant="tonal" color="warning" class="flex-shrink-0">
+                {{ item.hit_count }}
+              </v-chip>
+              <v-icon v-else size="14" color="primary" class="flex-shrink-0">mdi-arrow-right</v-icon>
+            </v-sheet>
+          </div>
+        </template>
+      </v-sheet>
+    </template>
+
+    <!-- Step 2b: Suggested combinations -->
+    <template v-if="currentStep >= 2">
+      <v-sheet rounded="xl" color="grey-lighten-4" class="pa-4 mb-4">
+        <div class="d-flex align-center ga-2 mb-3">
+          <v-icon color="primary" size="18">mdi-shuffle-variant</v-icon>
           <span class="text-caption text-medium-emphasis font-weight-medium">Sugerencias de consulta</span>
         </div>
 
-        <div v-if="assistantStore.products.length === 0" class="d-flex align-center ga-3 py-2">
+        <div v-if="generatedQueries.length === 0" class="d-flex align-center ga-3 py-2">
           <v-progress-circular indeterminate color="primary" size="20" width="2" />
           <span class="text-body-2 text-medium-emphasis">Generando sugerencias basadas en los datos…</span>
         </div>
 
         <template v-else>
-          <p class="text-body-2 mb-3">
-            Basándonos en los datos disponibles en este observatorio, aquí tienes algunas consultas que puedes ejecutar:
-          </p>
+          <v-chip
+            size="x-small"
+            variant="tonal"
+            color="orange-darken-1"
+            prepend-icon="mdi-information-outline"
+            class="mb-3"
+          >Algunas combinaciones pueden no retornar resultados</v-chip>
 
           <div
             v-for="(query, index) in visibleQueries"
@@ -323,10 +416,6 @@ onBeforeUnmount(() => {
               Ver más
             </v-btn>
           </div>
-
-          <p v-if="generatedQueries.length === 0" class="text-body-2 text-medium-emphasis mt-2">
-            No se encontraron productos suficientes para generar sugerencias específicas.
-          </p>
         </template>
       </v-sheet>
     </template>
@@ -335,10 +424,16 @@ onBeforeUnmount(() => {
     <template v-if="currentStep >= 3">
       <v-divider class="mb-4" />
 
-      <v-sheet rounded="xl" color="grey-lighten-4" class="pa-4 mb-4">
+      <v-sheet
+        rounded="xl"
+        color="grey-lighten-4"
+        class="pa-4 mb-4"
+        :style="!outroDone ? 'cursor: pointer' : ''"
+        @click="skipTyping"
+      >
         <div class="d-flex align-center ga-2 mb-2">
           <v-icon color="primary" size="18">mdi-robot-outline</v-icon>
-          <span class="text-caption text-medium-emphasis font-weight-medium">Asistente JUB</span>
+          <span class="text-caption text-medium-emphasis font-weight-medium">Asistente Jub</span>
         </div>
         <span :class="['typing-cursor', { done: outroDone }]">{{ outroText }}</span>
       </v-sheet>

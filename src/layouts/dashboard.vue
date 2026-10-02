@@ -16,6 +16,7 @@
         no-click-animation
       >
         <template #activator="{ props: tipProps }">
+            
           <v-btn
             v-bind="tipProps"
             icon
@@ -23,7 +24,9 @@
             class="mr-1 jub-assistant-btn"
             @click="assistantStore.isOpen = !assistantStore.isOpen"
           >
+          <v-badge color="red" location="top right" dot>
           <v-icon size="30" color="primary">mdi-robot</v-icon>
+          </v-badge>
             <!-- <v-img src="@/assets/logo.svg" width="30" height="30" /> -->
           </v-btn>
         </template>
@@ -268,7 +271,6 @@ import { useAssistantStore } from '@/stores/assistant';
 import { type Notification } from '@/types/index.types';
 import { getRelativeTime } from '@/utils/date';
 import { useDisplay } from 'vuetify';
-import { V } from 'node_modules/vitest/dist/chunks/evaluatedModules.d.BxJ5omdx';
 
 const { mobile, mdAndUp } = useDisplay();
 const assistantStore = useAssistantStore();

@@ -87,28 +87,12 @@ interface Report {
 
 const reports: Report[] = [
   {
-    title: 'Reporte técnico final del proyecto',
-    category: 'Proyecto',
-    description: 'Documento integrador que consolida los resultados, metodología y conclusiones del proyecto MADTEC-2025. Incluye el alcance completo de las plataformas desarrolladas y su impacto en el ecosistema de datos científicos.',
-    icon: 'mdi-file-document-multiple-outline',
-    color: 'primary',
-    link: '#',
-  },
-  {
     title: 'Reporte técnico — JUB',
     category: 'Plataforma',
     description: 'Descripción técnica de JUB, la plataforma genérica de big data para ciencias de la vida y salud. Cubre la arquitectura de sandboxes, el modelo de observatorios FAIR y los servicios de ciencia de datos.',
     icon: 'mdi-telescope',
-    color: 'teal',
-    link: '#',
-  },
-  {
-    title: 'Reporte técnico — MictlanX',
-    category: 'Componente',
-    description: 'Documentación de MictlanX, el sistema de almacenamiento en nube del proyecto. Describe la arquitectura de descarga por fragmentos, la gestión de concurrencia y las estrategias de replicación.',
-    icon: 'mdi-cloud-outline',
-    color: 'blue-grey',
-    link: '#',
+    color: 'primary',
+    link: 'https://cinvestav365-my.sharepoint.com/:f:/g/personal/ricardo_ibarra_cinvestav_mx/IgDlfDRrtusDR5LkwnEONnLaAa47mUC7VDrTEhZ6eFsihZw?e=H6wXNe',
   },
   {
     title: 'Reporte técnico — Xelhua',
@@ -116,14 +100,30 @@ const reports: Report[] = [
     description: 'Documentación de Xelhua, el servicio de autenticación y autorización. Abarca el modelo de tokens, la integración con servicios externos y los mecanismos de seguridad implementados.',
     icon: 'mdi-server-network',
     color: 'red-darken-2',
-    link: '#',
+    link: 'https://cinvestav365-my.sharepoint.com/personal/ricardo_ibarra_cinvestav_mx/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fricardo%5Fibarra%5Fcinvestav%5Fmx%2FDocuments%2FMADTEC%2FPRODUCTOS%20ENTREGABLES%2FCapitulo%202%20%2D%20Datos%5Festructurados%5Fe%5Fintegracion%2F2%2E1%5FMalla%5FServicios%5FEstructurados%5FJub%2DMictlanX&ga=1',
   },
   {
     title: 'Reporte técnico — Nez',
     category: 'Componente',
     description: 'Documentación de Nez, el modelo esqueleto para construir sistemas de IA en el continuum computacional. Incluye el modelo de construcción, la integración de requerimientos no funcionales y los casos de estudio.',
     icon: 'mdi-graph-outline',
-    color: 'deep-purple',
+    color: 'blue',
+    link: 'https://cinvestav365-my.sharepoint.com/:f:/g/personal/ricardo_ibarra_cinvestav_mx/IgC3CHgxdSIYR6tsx52MYWLzAXNGjUei3fdSvTJQCiFkG54?e=O8LaaY',
+  },
+  {
+    title: 'Reporte técnico — MictlanX',
+    category: 'Componente',
+    description: 'Documentación de MictlanX, el sistema de almacenamiento en nube del proyecto. Describe la arquitectura de descarga por fragmentos, la gestión de concurrencia y las estrategias de replicación.',
+    icon: 'mdi-cloud-outline',
+    color: 'blue-grey',
+    link: 'https://cinvestav365-my.sharepoint.com/:f:/g/personal/ricardo_ibarra_cinvestav_mx/IgAfHSb5hbfPQofwcQWjgrs8AcB1NkG_pdNmo32UHgYPWjo?e=Qp1vI6',
+  },
+  {
+    title: 'Reporte técnico final del proyecto',
+    category: 'Proyecto',
+    description: 'Documento integrador que consolida los resultados, metodología y conclusiones del proyecto MADTEC-2025. Incluye el alcance completo de las plataformas desarrolladas y su impacto en el ecosistema de datos científicos.',
+    icon: 'mdi-file-document-multiple-outline',
+    color: 'warning',
     link: '#',
   },
 ];
