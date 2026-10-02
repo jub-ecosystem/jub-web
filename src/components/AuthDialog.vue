@@ -37,9 +37,9 @@
           <v-text-field v-model="password" placeholder="Contraseña" type="password" variant="solo" flat
             bg-color="grey-lighten-3" density="comfortable" rounded="0" hide-details class="mb-5"></v-text-field>
 
-          <v-btn :loading="appStore.isLoading" :disabled="appStore.isLoading" type="submit" color="black" block
+          <v-btn :loading="appStore.isLoading" :disabled="loginDisabled" type="submit" color="black" block
             size="large" rounded="0" class="font-weight-bold text-white mb-4" elevation="0">
-            INICIAR SESIÓN
+            {{ loginLabel }}
           </v-btn>
 
           <v-btn variant="text" color="grey-darken-1" class="text-none text-body-2" density="compact" :ripple="false">
@@ -54,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore} from '@/stores/auth';
 import { type AuthAttemptDTO } from '@/types/index.types';
@@ -71,21 +71,34 @@ const { showAuthDialog } = storeToRefs(authStore);
 const username = ref('');
 const password = ref('');
 
+const loginCooldown = ref(0);
+let _loginTimer: ReturnType<typeof setInterval> | null = null;
+const startLoginCooldown = () => {
+  loginCooldown.value = 3;
+  _loginTimer = setInterval(() => {
+    loginCooldown.value--;
+    if (loginCooldown.value <= 0) { clearInterval(_loginTimer!); _loginTimer = null; }
+  }, 1000);
+};
+const loginDisabled = computed(() => appStore.isLoading || loginCooldown.value > 0);
+const loginLabel    = computed(() => loginCooldown.value > 0 ? `ESPERA (${loginCooldown.value}s)` : 'INICIAR SESIÓN');
+
 const closeDialog = () => {
   authStore.showAuthDialog = false;
 };
 const handleLogin = async () => {
+  if (loginDisabled.value) return;
+  startLoginCooldown();
   try {
     appStore.setIsLoading(true);
     const success = await authStore.login({
       username: username.value,
       password: password.value,
       scope: 'jub',
-      expiration: "1h",
+      expiration: "24h",
       renew_token: false
     } as AuthAttemptDTO);
 
-    console.log('Login success:', success);
 
     if (success) {
       closeDialog();

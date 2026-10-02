@@ -119,7 +119,6 @@ const handleCreateTask = async () => {
   }
 
   const success = await jubStore.upload_yaml(payloadBlob);
-  console.log("Resultado de la ingesta YAML:", success, "Error:", jubStore.error);
   if (success) {
     appStore.showSnackbar("Configuración procesada e ingesta exitosa", 4000, SnackbarColor.SUCCESS);
     emit('update:modelValue', false);

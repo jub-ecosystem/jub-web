@@ -120,12 +120,19 @@ export interface ProductXDTO {
     tags: string[]
     attributes: string[]
     metadata?: Record<string, string>
+    observatory_id?: string | null
+    observatory_ids?: string[]
     created_at: string
     updated_at: string
 }
 
 export interface SearchQueryDTO {
-    query: string
+    query: string;
+    observatory_id?: string | null;
+    limit?: number;
+    skip?: number;
+    strict?: boolean;
+    no_cache?: boolean;
 }
 
 export interface AppearanceSettings {
@@ -334,6 +341,29 @@ export interface ServiceDTO {
   public: boolean;
   provider: ServiceProvider;
   workflow?: WorkflowDetailDTO | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SearchSuggestionResponseDTO {
+  observatory_id: string;
+  suggestions: Array<{ query: string; hit_count: number }>;
+}
+
+export interface ObservatorySuggestionResponseDTO {
+  suggestions: Array<{ query: string; hit_count: number }>;
+}
+
+export interface CatalogXDTO {
+  catalog_id: string;
+  root_group_id: string | null;
+  name: string;
+  value: string;
+  catalog_type: string;
+  parent_catalog_id: string | null;
+  level: number;
+  description: string;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }

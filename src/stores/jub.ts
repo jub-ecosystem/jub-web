@@ -1,5 +1,7 @@
 import {defineStore} from 'pinia'
-import {type CatalogResponseDTO,type CatalogItemAliasDTO,type CatalogItemDTO ,type CatalogSummaryDTO, type Notification,type ObservatoryDTO,type ObservatoryStatsDTO,type ProductXDTO,type UserSettings, type DataSourceDTO, type DataRecord, type TaskXDTO, type TasksStatsDTO, type ServiceDTO, type CatalogItemXResponseDTO, type ReviewDTO} from '@/types/index.types'
+import {type CatalogResponseDTO,type CatalogItemAliasDTO,type CatalogItemDTO ,type CatalogSummaryDTO, type Notification,type ObservatoryDTO,type ObservatoryStatsDTO,type ProductXDTO,type UserSettings, type DataSourceDTO, type DataRecord, type TaskXDTO, type TasksStatsDTO, type ServiceDTO, type CatalogItemXResponseDTO, type ReviewDTO, type SearchSuggestionResponseDTO, type ObservatorySuggestionResponseDTO, type CatalogXDTO} from '@/types/index.types'
+import { useAuthStore } from '@/stores/auth'
+import type { VerifyDTO } from '@/types/index.types'
 // interface Observatory
 
 
@@ -9,6 +11,15 @@ import {type CatalogResponseDTO,type CatalogItemAliasDTO,type CatalogItemDTO ,ty
 export const useJubStore = defineStore('jub', () => {
     const catalogs = ref<CatalogSummaryDTO[]>([]);
     const API_URL = import.meta.env.VITE_JUB_API_URL || 'http://localhost:5000/api/v2';
+
+    function trigger401() {
+        const token    = localStorage.getItem('token');
+        const secret   = localStorage.getItem('secret');
+        const username = localStorage.getItem('username');
+        if (token && secret && username) {
+            useAuthStore().verifyWithRetry({ access_token: token, secret, username } as VerifyDTO);
+        }
+    }
     const isLoading = ref(false)
     const error = ref<string | null>(null );
     const themeMapping: Record<string, 'light' | 'dark'> = {
@@ -16,7 +27,20 @@ export const useJubStore = defineStore('jub', () => {
         'jubThemeDark': 'dark'
     }
     const catalog = ref<CatalogResponseDTO | null>(null);
-    const catalogItemsCache = ref<Record<string, Array<{title: string; value: string}>>>({});
+    const catalogItemsCache    = ref<Record<string, Array<{title: string; value: string}>>>({});
+    const tagDetailsStoreCache = ref<Record<string, CatalogItemXResponseDTO[]>>({});
+
+    // ── Download queue ────────────────────────────────────────────────────────
+    const downloadQueue      = ref<string[]>([]);
+    const activeDownloadId   = ref<string | null>(null);
+    const activeController   = ref<AbortController | null>(null);
+    const downloadCache      = ref<Record<string, { url: string | null; type: string | null; size: number | null }>>({});
+    const downloadProgress   = ref<Record<string, number>>({});
+    const cancelledDownloads = ref<Record<string, boolean>>({});
+    const downloadMeta       = ref<Record<string, { name: string; extension?: string }>>({});
+    const downloadSpeed      = ref<number>(0);
+    const isSlowNetwork      = computed(() => downloadSpeed.value > 0 && downloadSpeed.value < 300);
+    let   _queueRunning      = false;
 
     async function fetchCatalogs() {
         isLoading.value = true;
@@ -195,7 +219,7 @@ export const useJubStore = defineStore('jub', () => {
     async function get_observatories(): Promise<ObservatoryDTO[]>  {
         try{
             isLoading.value = true;
-            const response = await fetch(`${API_URL}/observatories`);
+            const response = await fetch(`${API_URL}/observatories`, { headers: authHeaders() });
             if(response.ok){
                 const data:ObservatoryDTO[] = await response.json();
                 return data;
@@ -211,21 +235,23 @@ export const useJubStore = defineStore('jub', () => {
             isLoading.value = false
         }
     }
-    async function search_observatories(query:string,strict:boolean, skip = 0, limit = 24): Promise<ObservatoryDTO[]>{
+    async function search_observatories(query:string,strict:boolean, skip = 0, limit = 24, no_cache = false): Promise<ObservatoryDTO[]>{
         try{
             isLoading.value = true;
             const response = await fetch(`${API_URL}/search/observatories`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    ...authHeaders(),
+                    // 'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ query,strict, skip, limit })
+                body: JSON.stringify({ query, strict, skip, limit, no_cache })
             });
             if(response.ok){
                 const data:ObservatoryDTO[] = await response.json();
                 console.log("Observatories",data)
                 return data;
-            }else {
+            } else {
+                if (response.status === 401) trigger401();
                 throw new Error(`Error searching observatories: ${response.statusText}`);
             }
         } catch (e){
@@ -237,20 +263,24 @@ export const useJubStore = defineStore('jub', () => {
         }
     }
 
-    async function search(query:string,observatory_id:string,skip:number,limit:number, strict = false): Promise<ProductXDTO[]>{
+    async function search(query: string, observatory_id: string | null, skip: number, limit: number, strict = false, no_cache = false): Promise<ProductXDTO[]>{
         try{
             isLoading.value = true;
             const response = await fetch(`${API_URL}/search`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    ...authHeaders(),
+                    // 'Content-Type': 'application/json',
+                    // "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                    // "Temporal-Secret-Key": `${localStorage.getItem("secret")}`,
                 },
-                body: JSON.stringify({ query,observatory_id, skip,limit, strict })
+                body: JSON.stringify({ query, observatory_id, skip, limit, strict, no_cache })
             });
             if(response.ok){
                 const data:ProductXDTO[] = await response.json();
                 return data;
-            }else {
+            } else {
+                if (response.status === 401) trigger401();
                 throw new Error(`Error searching products: ${response.statusText}`);
             }
         } catch (e){
@@ -295,8 +325,10 @@ export const useJubStore = defineStore('jub', () => {
             formData.append('file', file, 'config.yml');
 
             // Ajusta la URL según el prefijo real de tu router (ej. /api/v2/search/code o /api/v2/code)
+            const { 'Content-Type': _ct, ...authOnly } = authHeaders();
             const response = await fetch(`${API_URL}/code`, {
                 method: 'POST',
+                headers: authOnly,
                 body: formData, // No agregues 'Content-Type', el navegador lo establece automáticamente como multipart/form-data
             });
 
@@ -323,7 +355,7 @@ export const useJubStore = defineStore('jub', () => {
         error.value   = null;
         catalog.value = null;
         try {
-            const response = await fetch(`${API_URL}/catalogs/${catalogId}`);
+            const response = await fetch(`${API_URL}/catalogs/${catalogId}`, { headers: authHeaders() });
             const data: CatalogResponseDTO = await response.json();
             catalog.value = data;
         } catch (e: any) {
@@ -346,12 +378,26 @@ export const useJubStore = defineStore('jub', () => {
     };
   }
 
-  async function fetchCatalogItemsByType(type: string, bustCache = false): Promise<Array<{title: string; value: string}>> {
-    if (!bustCache && catalogItemsCache.value[type]) return catalogItemsCache.value[type];
+  async function fetchCatalogItemsByType(type: string, bustCache = false): Promise<Array<{title: string; value: string; group?: string}>> {
+    const LS_KEY = `jub:catalog:${type}`;
+    if (!bustCache) {
+      if (catalogItemsCache.value[type]) return catalogItemsCache.value[type];
+      const stored = localStorage.getItem(LS_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          catalogItemsCache.value[type] = parsed;
+          return parsed;
+        } catch { /* corrupt — fall through */ }
+      }
+    } else {
+      delete catalogItemsCache.value[type];
+      localStorage.removeItem(LS_KEY);
+    }
     if (catalogs.value.length === 0) await fetchCatalogs();
 
     const matching = catalogs.value.filter(c => c.catalog_type === type);
-    const result: Array<{title: string; value: string}> = [];
+    const result: Array<{title: string; value: string; group?: string}> = [];
 
     function flatten(items: any[]): any[] {
       return items.flatMap((i: any) => [i, ...(i.children?.length ? flatten(i.children) : [])]);
@@ -368,10 +414,15 @@ export const useJubStore = defineStore('jub', () => {
         for (const i of flat) {
           // TEMPORAL catalogs: the DSL uses the numeric code (e.g. 2024),
           // not the UPPER_SNAKE value (e.g. Y2024).
-          const dslValue = type === 'TEMPORAL' ? String(i.code) : i.value;
+          // INTEREST catalogs: prefix with catalog value so the backend can resolve the scope.
+          let dslValue: string;
+          if (type === 'TEMPORAL') dslValue = String(i.code);
+          else if (type === 'INTEREST') dslValue = `${cat.value}.${i.value}`;
+          else dslValue = i.value;
+
           if (!seen.has(dslValue)) {
             seen.add(dslValue);
-            result.push({ value: dslValue, title: `${i.name} (${dslValue})` });
+            result.push({ value: dslValue, title: `${i.name} (${i.value})`, group: type === 'INTEREST' ? cat.name : undefined });
           }
         }
       } catch {
@@ -380,15 +431,18 @@ export const useJubStore = defineStore('jub', () => {
     }
 
     catalogItemsCache.value[type] = result;
+    localStorage.setItem(LS_KEY, JSON.stringify(result));
     return result;
   }
 
   async function searchServices(query: string, skip = 0, limit = 100, strict = false): Promise<ServiceDTO[]> {
     try {
       isLoading.value = true;
+      const headers = authHeaders();
+      // console.log("Searching services with query:", query, "strict:", strict, headers);
       const response = await fetch(`${API_URL}/search/services`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify({ query, skip, limit, strict }),
       });
       if (!response.ok) throw new Error(response.statusText);
@@ -557,33 +611,171 @@ export const useJubStore = defineStore('jub', () => {
   }
 
   async function fetchProductTagDetails(productId: string): Promise<CatalogItemXResponseDTO[]> {
+    const LS_KEY = `jub:tags:${productId}`;
+    if (tagDetailsStoreCache.value[productId]) return tagDetailsStoreCache.value[productId];
+    const stored = localStorage.getItem(LS_KEY);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as CatalogItemXResponseDTO[];
+        tagDetailsStoreCache.value[productId] = parsed;
+        return parsed;
+      } catch { /* corrupt — fall through */ }
+    }
     try {
       const response = await fetch(`${API_URL}/products/${productId}/tags/details`, {
         headers: authHeaders(),
       });
       if (!response.ok) throw new Error(response.statusText);
-      return await response.json() as CatalogItemXResponseDTO[];
+      const result = await response.json() as CatalogItemXResponseDTO[];
+      tagDetailsStoreCache.value[productId] = result;
+      localStorage.setItem(LS_KEY, JSON.stringify(result));
+      return result;
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);
       return [];
     }
   }
 
-  async function downloadProduct(productId: string): Promise<{ url: string | null; type: string | null }> {
+  async function _downloadWithSignal(
+    productId: string,
+    signal: AbortSignal,
+    onProgress?: (pct: number, received: number) => void,
+  ): Promise<{ url: string | null; type: string | null; size: number | null }> {
+    const response = await fetch(`${API_URL}/products/${productId}/download`, {
+      headers: authHeaders(),
+      signal,
+    });
+    if (!response.ok) throw new Error(response.statusText);
+    const contentType = response.headers.get('content-type') || 'application/octet-stream';
+    const total = parseInt(response.headers.get('content-length') ?? '0', 10);
+    if (onProgress && response.body) {
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let received = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        const pct = total > 0 ? Math.min(99, Math.round((received / total) * 100)) : -1;
+        onProgress(pct, received);
+      }
+      const blob = new Blob(chunks as BlobPart[], { type: contentType });
+      onProgress(100, received);
+      return { url: URL.createObjectURL(blob), type: contentType, size: blob.size };
+    }
+    const blob = await response.blob();
+    const type = blob.type || contentType;
+    return { url: URL.createObjectURL(blob), type, size: blob.size };
+  }
+
+  async function _processQueue(): Promise<void> {
+    if (_queueRunning) return;
+    _queueRunning = true;
+    while (downloadQueue.value.length > 0) {
+      const productId = downloadQueue.value.shift()!;
+      activeDownloadId.value = productId;
+      const controller = new AbortController();
+      activeController.value = controller;
+      const dlStart = Date.now();
+      downloadProgress.value[productId] = -1;
+      try {
+        const result = await _downloadWithSignal(productId, controller.signal, (pct, receivedBytes) => {
+          downloadProgress.value[productId] = pct;
+          const elapsed = (Date.now() - dlStart) / 1000;
+          if (elapsed >= 1) {
+            downloadSpeed.value = Math.round(receivedBytes / elapsed / 1024);
+          }
+        });
+        if (result.url) {
+          downloadCache.value[productId] = result;
+        } else {
+          cancelledDownloads.value[productId] = true;
+        }
+      } catch (e) {
+        cancelledDownloads.value[productId] = true;
+      } finally {
+        downloadSpeed.value = 0;
+        delete downloadProgress.value[productId];
+        activeDownloadId.value = null;
+        activeController.value = null;
+      }
+    }
+    _queueRunning = false;
+  }
+
+  function enqueueDownload(productId: string, meta?: { name: string; extension?: string }): void {
+    if (downloadCache.value[productId]?.url) return;
+    if (activeDownloadId.value === productId) return;
+    if (downloadQueue.value.includes(productId)) return;
+    delete cancelledDownloads.value[productId];
+    if (meta) downloadMeta.value[productId] = meta;
+    downloadQueue.value.push(productId);
+    _processQueue();
+  }
+
+  function cancelAllDownloads(): void {
+    downloadQueue.value.splice(0);
+    activeController.value?.abort();
+    downloadSpeed.value = 0;
+    Object.keys(cancelledDownloads.value).forEach(k => delete cancelledDownloads.value[k]);
+  }
+
+  function cancelDownload(productId: string): void {
+    const qi = downloadQueue.value.indexOf(productId);
+    if (qi !== -1) {
+      downloadQueue.value.splice(qi, 1);
+      cancelledDownloads.value[productId] = true;
+      return;
+    }
+    if (activeDownloadId.value === productId) {
+      activeController.value?.abort();
+    }
+  }
+
+  async function downloadProduct(
+    productId: string,
+    onProgress?: (pct: number) => void,
+  ): Promise<{ url: string | null; type: string | null; size: number | null }> {
     try {
-      const response = await fetch(`${API_URL}/products/${productId}/download`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Temporal-Secret-Key': `${localStorage.getItem('secret')}`,
-        },
-      });
-      if (!response.ok) throw new Error(response.statusText);
-      const blob = await response.blob();
-      const type = blob.type || response.headers.get('content-type') || 'application/octet-stream';
-      return { url: URL.createObjectURL(blob), type };
+      const ctrl = new AbortController();
+      return await _downloadWithSignal(productId, ctrl.signal, onProgress);
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);
-      return { url: null, type: null };
+      return { url: null, type: null, size: null };
+    }
+  }
+
+  async function fetchSearchSuggestions(
+    observatoryId: string,
+    limit = 5,
+  ): Promise<SearchSuggestionResponseDTO | null> {
+    try {
+      const params = new URLSearchParams({ observatory_id: observatoryId, limit: String(limit) });
+      const res = await fetch(`${API_URL}/search/products/suggestions?${params}`, {
+        headers: authHeaders(),
+      });
+      if (!res.ok) throw new Error(res.statusText);
+      return await res.json();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+      return null;
+    }
+  }
+
+  async function fetchObservatorySuggestions(
+    limit = 5,
+  ): Promise<ObservatorySuggestionResponseDTO | null> {
+    try {
+      const params = new URLSearchParams({ limit: String(limit) });
+      const res = await fetch(`${API_URL}/search/observatories/suggestions?${params}`, {
+        headers: authHeaders(),
+      });
+      if (!res.ok) throw new Error(res.statusText);
+      return await res.json();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+      return null;
     }
   }
 
@@ -644,6 +836,36 @@ export const useJubStore = defineStore('jub', () => {
       } catch { return false; }
     }
 
+    // ── Observatory catalogs (for Jub Assistant) ──────────────────────────────
+    const CATALOG_CACHE_SIZE = 3;
+    const _observatoryCatalogsCache = new Map<string, CatalogXDTO[]>();
+    const isLoadingObsCatalogs = ref(false);
+
+    async function fetchObservatoryCatalogs(observatoryId: string): Promise<CatalogXDTO[]> {
+      const cached = _observatoryCatalogsCache.get(observatoryId);
+      if (cached) return cached;
+
+      isLoadingObsCatalogs.value = true;
+      try {
+        const res = await fetch(`${API_URL}/observatories/${observatoryId}/catalogs`, {
+          headers: authHeaders(),
+        });
+        if (!res.ok) throw new Error(res.statusText);
+        const data = await res.json() as CatalogXDTO[];
+        if (_observatoryCatalogsCache.size >= CATALOG_CACHE_SIZE) {
+          const oldest = _observatoryCatalogsCache.keys().next().value;
+          if (oldest !== undefined) _observatoryCatalogsCache.delete(oldest);
+        }
+        _observatoryCatalogsCache.set(observatoryId, data);
+        return data;
+      } catch (e) {
+        error.value = e instanceof Error ? e.message : String(e);
+        return [];
+      } finally {
+        isLoadingObsCatalogs.value = false;
+      }
+    }
+
     return {
         get_observatories,
         getObservatory,
@@ -662,6 +884,7 @@ export const useJubStore = defineStore('jub', () => {
         catalog,
         catalogs,
         catalogItemsCache,
+        tagDetailsStoreCache,
         fetchCatalog,
         fetchCatalogs,
         fetchDataSources,
@@ -677,12 +900,27 @@ export const useJubStore = defineStore('jub', () => {
         generatePlot,
         fetchProductTagDetails,
         downloadProduct,
+        enqueueDownload,
+        cancelDownload,
+        cancelAllDownloads,
+        downloadQueue,
+        activeDownloadId,
+        downloadCache,
+        downloadProgress,
+        cancelledDownloads,
+        downloadMeta,
+        downloadSpeed,
+        isSlowNetwork,
+        fetchSearchSuggestions,
+        fetchObservatorySuggestions,
         reset,
         incrementViews,
         getReviews,
         createReview,
         updateReview,
         deleteReview,
+        fetchObservatoryCatalogs,
+        isLoadingObsCatalogs,
     }
 
 })

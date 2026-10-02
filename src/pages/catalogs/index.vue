@@ -2,11 +2,11 @@
   <v-container max-width="1200" class="py-8">
 
     <v-row class="mb-6" align="center">
-      <v-col cols="12" md="7">
+      <v-col cols="12" md="7" data-tour="cat-header">
         <h1 class="text-h4 font-weight-black mb-1">Catálogos</h1>
         <p class="text-body-1 text-grey-darken-1">Explora y administra las dimensiones de tus observatorios.</p>
       </v-col>
-      <v-col cols="12" md="5">
+      <v-col cols="12" md="5" data-tour="cat-search">
         <v-text-field
           v-model="searchQuery"
           variant="solo-filled"
@@ -37,7 +37,7 @@
 
     <!-- Cards -->
     <v-row v-else>
-      <v-col v-for="catalog in filteredCatalogs" :key="catalog.catalog_id" cols="12" sm="6" md="4">
+      <v-col v-for="(catalog, index) in filteredCatalogs" :key="catalog.catalog_id" cols="12" sm="6" md="4" :data-tour="index === 0 ? 'cat-first-card' : undefined">
         <v-hover v-slot="{ isHovering, props }">
           <v-card
             v-bind="props"
@@ -79,13 +79,21 @@
                 append-icon="mdi-arrow-right"
                 class="text-none font-weight-bold"
               >
-                Ver Ítems
+                Ver elementos
               </v-btn>
             </v-card-actions>
           </v-card>
         </v-hover>
       </v-col>
     </v-row>
+
+    <!-- Tour replay button -->
+    <v-tooltip text="Ver tutorial" location="left">
+      <template #activator="{ props: tp }">
+        <v-btn v-bind="tp" icon="mdi-help-circle-outline" variant="tonal" color="primary" size="small"
+               style="position:fixed;bottom:24px;right:24px;z-index:200;" @click="replayTour" />
+      </template>
+    </v-tooltip>
 
     <!-- Empty state -->
     <v-row v-if="!store.isLoading && filteredCatalogs.length === 0" justify="center" class="mt-10">
@@ -102,7 +110,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
+import { useTour } from '@/composables/useTour';
 import { useRouter } from 'vue-router';
 import { useJubStore } from '@/stores/jub';
 import { type CatalogSummaryDTO } from '@/types/index.types';
@@ -131,9 +140,19 @@ const goToCatalog = (catalog: CatalogSummaryDTO) => {
   router.push({ name: 'CatalogDetails', params: { catalogId: catalog.catalog_id } });
 };
 
-onMounted(() => {
+const catalogTourSteps = [
+  { element: '[data-tour="cat-header"]',     popover: { title: 'Catálogos',             description: 'Los catálogos definen los valores válidos para VS, VT y VI. Aquí puedes explorar cada dimensión de los observatorios.', side: 'bottom' as const } },
+  { element: '[data-tour="cat-search"]',     popover: { title: 'Buscar catálogo',        description: 'Filtra la lista por nombre, valor o tipo de catálogo.', side: 'bottom' as const } },
+  { element: '[data-tour="cat-first-card"]', popover: { title: 'Catálogo',    description: 'Muestra el nombre, identificador y tipo del catálogo (SPATIAL, TEMPORAL, INTEREST). Haz clic en "Ver elementos" para explorar sus valores.', side: 'bottom' as const } },
+];
+
+const { startTour, replayTour } = useTour(catalogTourSteps, { pageKey: 'catalogs' });
+
+onMounted(async () => {
   store.error = null;
-  if (store.catalogs.length === 0) store.fetchCatalogs();
+  if (store.catalogs.length === 0) await store.fetchCatalogs();
+  await nextTick();
+  startTour();
 });
 </script>
 

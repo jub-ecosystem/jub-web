@@ -1,6 +1,14 @@
 <template>
   <v-container max-width="900" class="py-8">
     
+    <!-- Tour replay button -->
+    <v-tooltip text="Ver tutorial" location="left">
+      <template #activator="{ props: tp }">
+        <v-btn v-bind="tp" icon="mdi-help-circle-outline" variant="tonal" color="primary" size="small"
+               style="position:fixed;bottom:24px;right:24px;z-index:200;" @click="replayTour" />
+      </template>
+    </v-tooltip>
+
     <div class="mb-8">
       <h1 class="text-h4 font-weight-black mb-1">Configuración</h1>
       <p class="text-body-1 text-grey-darken-1">Personaliza tu experiencia y el entorno de trabajo.</p>
@@ -8,7 +16,7 @@
 
     <v-row>
       <v-col cols="12">
-        <v-card rounded="xl" elevation="2" class="pa-2">
+        <v-card rounded="xl" elevation="2" class="pa-2" data-tour="settings-general">
           <v-card-title>
             <v-icon start color="primary" class="mr-2">mdi-cog-outline</v-icon>
             General
@@ -39,7 +47,7 @@
               <v-list-item-title class="font-weight-medium">Seguridad y privacidad</v-list-item-title>
               <v-list-item-subtitle>Gestiona tus opciones de seguridad y privacidad.</v-list-item-subtitle>
             </v-list-item>
-            <v-list-item>
+            <v-list-item data-tour="settings-tutorial">
               <template v-slot:prepend>
                 <v-icon color="grey-darken-2">mdi-school-outline</v-icon>
               </template>
@@ -62,7 +70,7 @@
         </v-card>
       </v-col>
       <v-col cols="12">
-        <v-card rounded="xl" elevation="2" class="pa-2">
+        <v-card rounded="xl" elevation="2" class="pa-2" data-tour="settings-appearance">
           <v-card-title class="d-flex align-center font-weight-bold px-4 pt-4">
             <v-icon start color="primary" class="mr-2">mdi-palette-outline</v-icon>
             Apariencia
@@ -137,7 +145,7 @@
       </v-col>
 
       <v-col cols="12">
-        <v-card rounded="xl" elevation="2" class="pa-2">
+        <v-card rounded="xl" elevation="2" class="pa-2" data-tour="settings-exploration">
           <v-card-title class="d-flex align-center font-weight-bold px-4 pt-4">
             <v-icon start color="secondary-blue" class="mr-2">mdi-view-dashboard-outline</v-icon>
             Exploración de datos
@@ -193,7 +201,7 @@
         </v-card>
       </v-col>
 
-      <v-col cols="12">
+      <!-- <v-col cols="12">
         
         <v-card rounded="xl" elevation="2" class="pa-2">
           <v-card-title class="d-flex align-center font-weight-bold px-4 pt-4">
@@ -227,7 +235,7 @@
 
         </v-card>
 
-      </v-col>
+      </v-col> -->
     </v-row>
 
     <div class="d-flex justify-end mt-8">
@@ -237,6 +245,7 @@
         rounded="lg"
         class="text-none font-weight-bold px-8"
         prepend-icon="mdi-content-save-outline"
+        data-tour="settings-save"
         @click="saveSettings"
         :loading="isSaving"
       >
@@ -252,17 +261,18 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useTheme } from 'vuetify'
 import { useAuthStore } from '@/stores/auth'
 import { useJubStore } from '@/stores/jub'
+import { useTour } from '@/composables/useTour'
 import {type UserSettings} from '@/types/index.types'
 
 definePage({
   name: 'Settings',
   meta: {
     requiresAuth: true,
-    layout: 'profile'
+    layout: 'dashboard'
   }
 })
 
@@ -331,9 +341,21 @@ const saveSettings = async () => {
   }, 800)
 }
 
+const settingsTourSteps = [
+  { element: '[data-tour="settings-general"]',    popover: { title: 'Configuración general',    description: 'Información de cuenta, notificaciones y ajustes generales de la plataforma.', side: 'bottom' as const } },
+  { element: '[data-tour="settings-tutorial"]',   popover: { title: 'Tutorial',                  description: 'Activa o desactiva el tutorial guiado. Cuando está activo, cada página mostrará un recorrido la primera vez que la visitas. Puedes volver a verlo con el botón flotante ?.', side: 'bottom' as const } },
+  { element: '[data-tour="settings-appearance"]', popover: { title: 'Apariencia',                description: 'Cambia entre modo claro y oscuro, ajusta el tamaño de fuente y reduce animaciones para mejorar el rendimiento.', side: 'top' as const } },
+  { element: '[data-tour="settings-exploration"]',popover: { title: 'Exploración de datos',      description: 'Define cuántos resultados mostrar por página y la vista predeterminada (cuadrícula o tabla).', side: 'top' as const } },
+  { element: '[data-tour="settings-save"]',       popover: { title: 'Guardar cambios',           description: 'Aplica y sincroniza todos los cambios con tu cuenta. Los ajustes se restauran automáticamente en tu próxima sesión.', side: 'top' as const } },
+];
+
+const { startTour, replayTour } = useTour(settingsTourSteps, { pageKey: 'settings' });
+
 onMounted(async () => {
   console.log("Loading settings for user:", authStore.user?.user_id)
   settings.value = await jubStore.get_settings(authStore.user?.user_id || '')
   authStore.settings = { ...settings.value }
+  await nextTick()
+  startTour()
 })
 </script>

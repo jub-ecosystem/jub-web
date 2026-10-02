@@ -15,6 +15,7 @@ import { createApp } from 'vue'
 
 // Styles
 import 'unfonts.css'
+import 'driver.js/dist/driver.css'
 
 const app = createApp(App)
 

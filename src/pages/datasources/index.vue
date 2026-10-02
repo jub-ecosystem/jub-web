@@ -1,15 +1,23 @@
 <template>
   <v-container max-width="1200" class="py-8">
 
+    <!-- Tour replay button -->
+    <v-tooltip text="Ver tutorial" location="left">
+      <template #activator="{ props: tp }">
+        <v-btn v-bind="tp" icon="mdi-help-circle-outline" variant="tonal" color="primary" size="small"
+               style="position:fixed;bottom:24px;right:24px;z-index:200;" @click="replayTour" />
+      </template>
+    </v-tooltip>
+
     <!-- Header -->
     <v-row class="mb-6" align="center">
-      <v-col cols="12" md="7">
+      <v-col cols="12" md="7" data-tour="ds-header">
         <h1 class="text-h4 font-weight-black mb-1">Fuentes de datos</h1>
         <p class="text-body-1 text-grey-darken-1">
           Conjuntos de datos indexados disponibles para consulta y análisis.
         </p>
       </v-col>
-      <v-col cols="12" md="5">
+      <v-col cols="12" md="5" data-tour="ds-search">
         <v-text-field
           v-model="searchQuery"
           variant="solo-filled"
@@ -27,7 +35,7 @@
     <!-- Format filters -->
     <v-row class="mb-4">
       <v-col cols="12">
-        <div class="d-flex flex-wrap ga-2 align-center">
+        <div class="d-flex flex-wrap ga-2 align-center" data-tour="ds-formats">
           <span class="text-body-2 font-weight-bold text-grey-darken-2 mr-1">Formato:</span>
           <v-chip
             v-for="fmt in formatOptions"
@@ -58,11 +66,12 @@
     <!-- Cards grid -->
     <v-row v-else>
       <v-col
-        v-for="source in filteredSources"
+        v-for="(source, index) in filteredSources"
         :key="source.source_id"
         cols="12"
         sm="6"
         md="4"
+        :data-tour="index === 0 ? 'ds-first-card' : undefined"
       >
         <v-hover v-slot="{ isHovering, props }">
           <v-card
@@ -134,9 +143,10 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useJubStore } from '@/stores/jub';
+import { useTour } from '@/composables/useTour';
 import type { DataSourceDTO, DataSourceFormat } from '@/types/index.types';
 
 definePage({
@@ -207,6 +217,15 @@ function goToSource(source: DataSourceDTO) {
   router.push({ name: 'DataSourceDetail', params: { sourceId: source.source_id } });
 }
 
+const dsTourSteps = [
+  { element: '[data-tour="ds-header"]',     popover: { title: 'Fuentes de datos',     description: 'Listado de conjuntos de datos indexados disponibles para consulta y análisis mediante DSL.', side: 'bottom' as const } },
+  { element: '[data-tour="ds-search"]',     popover: { title: 'Buscar fuente',         description: 'Filtra las fuentes por nombre, descripción o identificador.', side: 'bottom' as const } },
+  { element: '[data-tour="ds-formats"]',    popover: { title: 'Filtrar por formato',   description: 'Acota la lista al tipo de fuente: CSV, JSON, Postgres, MySQL o MongoDB. Haz clic en el mismo chip para quitar el filtro.', side: 'bottom' as const } },
+  { element: '[data-tour="ds-first-card"]', popover: { title: 'Fuente de datos',        description: 'Muestra el nombre, identificador y formato. Haz clic en "Ver registros" para explorar sus datos o ejecutar consultas DSL.', side: 'bottom' as const } },
+];
+
+const { startTour, replayTour } = useTour(dsTourSteps, { pageKey: 'datasources' });
+
 onMounted(async () => {
   loading.value    = true;
   fetchError.value = null;
@@ -217,5 +236,7 @@ onMounted(async () => {
     sources.value = result;
   }
   loading.value = false;
+  await nextTick();
+  startTour();
 });
 </script>

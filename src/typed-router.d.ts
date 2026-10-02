@@ -37,6 +37,10 @@ declare module 'vue-router/auto-routes' {
     'Kaexla': RouteRecordInfo<'Kaexla', '/observatories/kaexla', Record<never, never>, Record<never, never>>,
     'Products': RouteRecordInfo<'Products', '/products', Record<never, never>, Record<never, never>>,
     'Charts': RouteRecordInfo<'Charts', '/products/plot', Record<never, never>, Record<never, never>>,
+    'Resources': RouteRecordInfo<'Resources', '/resources', Record<never, never>, Record<never, never>>,
+    'ResourcesArticles': RouteRecordInfo<'ResourcesArticles', '/resources/articles', Record<never, never>, Record<never, never>>,
+    '/resources/guides': RouteRecordInfo<'/resources/guides', '/resources/guides', Record<never, never>, Record<never, never>>,
+    'ResourcesReports': RouteRecordInfo<'ResourcesReports', '/resources/reports', Record<never, never>, Record<never, never>>,
     'Services': RouteRecordInfo<'Services', '/services', Record<never, never>, Record<never, never>>,
     'MictlanX': RouteRecordInfo<'MictlanX', '/services/mictlanx', Record<never, never>, Record<never, never>>,
     'Nez': RouteRecordInfo<'Nez', '/services/nez', Record<never, never>, Record<never, never>>,
@@ -135,6 +139,22 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/products/plot.vue': {
       routes: 'Charts'
+      views: never
+    }
+    'src/pages/resources/index.vue': {
+      routes: 'Resources'
+      views: never
+    }
+    'src/pages/resources/articles.vue': {
+      routes: 'ResourcesArticles'
+      views: never
+    }
+    'src/pages/resources/guides.vue': {
+      routes: '/resources/guides'
+      views: never
+    }
+    'src/pages/resources/reports.vue': {
+      routes: 'ResourcesReports'
       views: never
     }
     'src/pages/services/index.vue': {

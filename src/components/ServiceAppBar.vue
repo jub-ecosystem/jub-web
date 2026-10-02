@@ -69,39 +69,9 @@
     
 </template>
 <script lang="ts" setup>
-interface MenuItem {
-  title: string;
-  hasDropdown: boolean;
-  items?: MenuItem[];
-  route: string; 
-}
-const router = useRouter();
+import { menuItems, type MenuItem } from '@/composables/useNavItems';
 
-const menuItems: MenuItem[] = [
-  { title: 'Inicio', hasDropdown: false, route: '/' },
-  { 
-    title: 'Servicios',
-    hasDropdown: true,
-    route: '/services',
-    items: [
-      { title: 'Xelhua', hasDropdown: false, route: '/services/xelhua' },
-      { title: 'Nez', hasDropdown: false, route: '/services/nez' },
-      { title: 'MictlanX', hasDropdown: false, route: '/services/mictlanx' },
-    ],
-  },
-  {
-    title: "Observatorios", 
-    hasDropdown: true, 
-    route: '/observatory'
-    , items: [
-      { title: 'Azomalli', hasDropdown: false, route: '/observatories/azomalli' },
-      { title: 'IMA', hasDropdown: false, route: '/observatories/ima' },
-      { title: 'Kaexla', hasDropdown: false, route: '/observatories/kaexla' },
-      { title: 'Alerta', hasDropdown: false, route: '/observatories/alerta' },
-    ]
-  },
-  { title: 'Contacto', hasDropdown: false, route: '/contact' },
-];
+const router = useRouter();
 
 
 const props = defineProps({

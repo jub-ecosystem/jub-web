@@ -1,11 +1,19 @@
 <template>
   <v-container max-width="1400" class="py-8">
 
+    <!-- Tour replay button -->
+    <v-tooltip text="Ver tutorial" location="left">
+      <template #activator="{ props: tp }">
+        <v-btn v-bind="tp" icon="mdi-help-circle-outline" variant="tonal" color="primary" size="small"
+               style="position:fixed;bottom:24px;right:24px;z-index:200;" @click="replayTour" />
+      </template>
+    </v-tooltip>
+
     <!-- ── Header ── -->
     <v-row justify="center" class="mb-8 mt-2">
       <v-col cols="12">
 
-        <div class="text-center mb-6">
+        <div class="text-center mb-6" data-tour="svc-header">
           <h1 class="text-h3 font-weight-black mb-2">Servicios externos</h1>
           <p class="text-body-1 text-grey-darken-1">
             Descubre y explora los servicios del ecosistema JUB por nombre o visibilidad.
@@ -19,7 +27,7 @@
             <v-row align="start" class="ga-0">
 
               <!-- Keyword input -->
-              <v-col cols="12" md="6">
+              <v-col cols="12" md="6" data-tour="svc-search">
                 <div class="d-flex align-center ga-2 mb-3">
                   <v-avatar color="primary" variant="tonal" size="28" rounded="lg">
                     <v-icon size="16">mdi-magnify</v-icon>
@@ -103,7 +111,7 @@
             <v-divider class="my-5" />
 
             <!-- Bottom bar: DSL preview + actions -->
-            <div class="d-flex align-center justify-space-between flex-wrap ga-3">
+            <div class="d-flex flex-column flex-md-row align-md-center justify-md-space-between ga-3">
 
               <div class="d-flex align-center ga-2 flex-wrap min-w-0">
                 <v-icon size="small" color="grey-darken-1">mdi-code-braces</v-icon>
@@ -115,14 +123,16 @@
                 <v-btn icon="mdi-content-copy" variant="text" size="x-small" color="grey" @click="copyDSL" />
               </div>
 
-              <div class="d-flex ga-2 align-center flex-shrink-0 flex-wrap">
+
+              <div class="d-flex ga-2 align-center flex-shrink-0 flex-wrap" data-tour="svc-controls">
                 <div class="d-flex align-center ga-1">
-                  <v-checkbox
+                  <v-switch
                     v-model="strict"
                     label="Búsqueda estricta"
                     density="compact"
                     hide-details
                     color="primary"
+                    inset
                     class="flex-shrink-0"
                   />
                   <v-tooltip location="top" max-width="300" text="En modo estricto todos los términos deben coincidir exactamente con el nombre o descripción del servicio.">
@@ -199,9 +209,10 @@
     <!-- ── Grid view ── -->
     <v-row v-else-if="viewMode === 'grid' && services.length > 0" class="d-flex align-stretch">
       <v-col
-        v-for="svc in services"
+        v-for="(svc, index) in services"
         :key="svc.service_id"
         cols="12" sm="6" lg="4"
+        :data-tour="index === 0 ? 'svc-first-card' : undefined"
       >
         <v-hover v-slot="{ isHovering, props }">
           <v-card
@@ -635,7 +646,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
+import { useTour } from '@/composables/useTour';
+import { useRoute } from 'vue-router';
 import { useJubStore } from '@/stores/jub';
 import { useAuthStore } from '@/stores/auth';
 import type { ServiceDTO, ServiceProvider, PatternDetailDTO, BuildingBlockDetailDTO } from '@/types/index.types';
@@ -649,6 +662,7 @@ definePage({
 
 const jubStore  = useJubStore();
 const authStore = useAuthStore();
+const route     = useRoute();
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 const providerLogo: Record<ServiceProvider, string | null> = {
@@ -766,8 +780,24 @@ const allBlocks = computed((): BuildingBlockDetailDTO[] => {
 });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+const servicesTourSteps = [
+  { element: '[data-tour="svc-header"]',     popover: { title: 'Servicios externos',    description: 'Aquí puedes explorar los servicios del ecosistema JUB: pipelines de procesamiento, modelos de inferencia, y más.', side: 'bottom' as const } },
+  { element: '[data-tour="svc-search"]',     popover: { title: 'Buscar por nombre',     description: 'Escribe el nombre o una palabra clave del servicio que buscas y presiona Enter o el botón Buscar.', side: 'bottom' as const } },
+  { element: '[data-tour="svc-controls"]',   popover: { title: 'Controles de búsqueda', description: 'Activa "Búsqueda estricta" para coincidir exactamente con el nombre. Usa "Limpiar" para reiniciar los filtros.', side: 'top' as const } },
+  { element: '[data-tour="svc-first-card"]', popover: { title: 'Servicio',   description: 'Muestra el proveedor, nombre y visibilidad del servicio. Haz clic en la tarjeta para ver su detalle completo con el flujo de trabajo.', side: 'bottom' as const } },
+];
+
+const { startTour, replayTour } = useTour(servicesTourSteps, { pageKey: 'services' });
+
 onMounted(async () => {
   await executeSearch();
+  const targetId = route.query.service_id as string | undefined;
+  if (targetId) {
+    const match = services.value.find(s => s.service_id === targetId);
+    if (match) openDetail(match);
+  }
+  await nextTick();
+  startTour();
 });
 </script>
 

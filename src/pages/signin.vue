@@ -54,22 +54,23 @@
                   rounded="lg"
                   elevation="0"
                   type="submit"
+                  :disabled="loginDisabled"
                   class="text-none font-weight-bold mt-2"
                 >
-                  {{ username.toLowerCase() === 'invitado' ? 'Entrar como Invitado' : 'Continuar' }}
+                  {{ loginLabel }}
                 </v-btn>
               </v-form>
 
-              <div class="d-flex align-center my-8">
+              <!-- <div class="d-flex align-center my-8">
                 <v-divider></v-divider>
                     <div class="d-flex align-center justify-center flex-column mx-4">
                         <span class="px-4 text-grey text-caption font-weight-bold">O</span> 
                         <span class="text-grey text-caption font-weight-bold">CONTINUAR CON</span>
                     </div>
                 <v-divider></v-divider>
-              </div>
+              </div> -->
 
-              <v-row justify="center" dense>
+              <!-- <v-row justify="center" dense>
                 <v-col cols="6">
                   <v-btn block variant="outlined" color="grey-lighten-1" size="large" rounded="lg" @click="loginWithGoogle">
                     <v-img src="@/assets/google.png" width="20" class="mr-2" /> Google
@@ -80,7 +81,7 @@
                     <v-icon start color="blue-darken-2">mdi-facebook</v-icon> Facebook
                   </v-btn>
                 </v-col>
-              </v-row>
+              </v-row> -->
             </v-window-item>
           </v-window>
 
@@ -132,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router'; 
 import { useAuthStore} from '@/stores/auth';
 import { type AuthAttemptDTO } from '@/types/index.types';
@@ -154,18 +155,34 @@ const router = useRouter();
 const authMode = ref('signin');
 const username = ref('');
 const password = ref('');
-  
+
+const loginCooldown = ref(0);
+const loginDisabled = computed(() => loginCooldown.value > 0);
+const loginLabel = computed(() => {
+  if (loginCooldown.value > 0) return `Espera ${loginCooldown.value}s…`;
+  return username.value.toLowerCase() === 'invitado' ? 'Entrar como Invitado' : 'Continuar';
+});
+
+function startLoginCooldown() {
+  loginCooldown.value = 3;
+  const t = setInterval(() => {
+    loginCooldown.value--;
+    if (loginCooldown.value <= 0) clearInterval(t);
+  }, 1000);
+}
+
 const handleLogin = async () => {
+  if (loginDisabled.value) return;
+  startLoginCooldown();
   const usernameFormatted = username.value.trim().toLowerCase();
   
   if (usernameFormatted === 'invitado' || usernameFormatted === 'guest') {
     password.value = import.meta.env.VITE_DEFAULT_GUEST_PASSWORD;
-    console.log('Iniciando sesión como invitado...' + password.value);
   }
   const authAttempt:AuthAttemptDTO = {
     username: username.value,
     password: password.value,
-    expiration:"1h",
+    expiration:"24h",
     renew_token:true,
     scope:"jub"
   };

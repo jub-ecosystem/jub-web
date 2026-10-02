@@ -1,6 +1,14 @@
 <template>
   <v-container max-width="800" class="py-8">
 
+    <!-- Tour replay button -->
+    <v-tooltip text="Ver tutorial" location="left">
+      <template #activator="{ props: tp }">
+        <v-btn v-bind="tp" icon="mdi-help-circle-outline" variant="tonal" color="primary" size="small"
+               style="position:fixed;bottom:24px;right:24px;z-index:200;" @click="replayTour" />
+      </template>
+    </v-tooltip>
+
     <div class="mb-6 d-flex align-center ga-3">
       <v-btn icon="mdi-arrow-left" variant="text" :to="{ name: 'TasksIndex' }"></v-btn>
       <h1 class="text-h5 font-weight-black">Detalle de tarea</h1>
@@ -12,7 +20,7 @@
     </template>
 
     <template v-else-if="task">
-      <v-card rounded="xl" elevation="2" class="mb-4">
+      <v-card rounded="xl" elevation="2" class="mb-4" data-tour="task-header">
         <v-card-item>
           <template v-slot:prepend>
             <v-avatar :color="getStatusColor(task.current_status) + '-lighten-4'" size="52">
@@ -33,7 +41,7 @@
 
         <v-divider></v-divider>
 
-        <v-card-text>
+        <v-card-text data-tour="task-meta">
           <v-row dense>
             <v-col cols="12" sm="6">
               <div class="text-overline text-grey-darken-1 mb-1">Tarea ID</div>
@@ -99,10 +107,11 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { useJubStore } from '@/stores/jub';
 import type { TaskXDTO } from '@/types/index.types';
+import { useTour } from '@/composables/useTour';
 
 definePage({
   name: 'TaskDetails',
@@ -157,7 +166,30 @@ async function handleRetry() {
   }
 }
 
+const taskTourSteps = [
+  {
+    element: '[data-tour="task-header"]',
+    popover: {
+      title: 'Estado de la tarea',
+      description: 'Aquí puedes ver el estado actual de la tarea, su nombre, descripción y el tipo de operación que ejecuta.',
+      side: 'bottom' as const,
+    },
+  },
+  {
+    element: '[data-tour="task-meta"]',
+    popover: {
+      title: 'Metadatos',
+      description: 'Identificadores únicos de la tarea y el observatorio asociado, junto con las fechas de creación y última actualización.',
+      side: 'top' as const,
+    },
+  },
+];
+
+const { startTour, replayTour } = useTour(taskTourSteps, { pageKey: 'task-detail' });
+
 onMounted(async () => {
   task.value = await jubStore.fetchTask(route.params.taskId as string);
+  await nextTick();
+  startTour();
 });
 </script>

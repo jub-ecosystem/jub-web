@@ -53,13 +53,12 @@ router.beforeEach(async (to, from, next) => {
   } 
   
   else {
-    const isAuthenticated = await authStore.verifyToken({ access_token: token, secret, username } as VerifyDTO)
-    
+    const isAuthenticated = await authStore.verifyWithRetry({ access_token: token, secret, username } as VerifyDTO)
+
     if (!isAuthenticated) {
-      // console.log("Invalid token, redirecting to home and clearing local storage.")
-      appStore.showSnackbar("Su sesión ha expirado, por favor inicie sesión nuevamente.",2000, SnackbarColor.ERROR) 
-      authStore.clearLocalStorage();
-      return next("/signin")
+      // Banner is already showing — save destination so login can resume navigation
+      authStore.pendingRedirect = to.fullPath;
+      return next(false);
     }
     return next()
   }

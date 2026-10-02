@@ -134,7 +134,7 @@ definePage({
     name: 'UserProfile',
     meta: {
         requiresAuth: true,
-        layout: 'profile'
+        layout: 'dashboard'
     }
 });
 

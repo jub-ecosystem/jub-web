@@ -1,6 +1,14 @@
 <template>
   <v-container max-width="1200" class="py-8">
 
+    <!-- Tour replay button -->
+    <v-tooltip text="Ver tutorial" location="left">
+      <template #activator="{ props: tp }">
+        <v-btn v-bind="tp" icon="mdi-help-circle-outline" variant="tonal" color="primary" size="small"
+               style="position:fixed;bottom:24px;right:24px;z-index:200;" @click="replayTour" />
+      </template>
+    </v-tooltip>
+
     <v-btn
       variant="text"
       prepend-icon="mdi-arrow-left"
@@ -23,6 +31,7 @@
         rounded="xl"
         elevation="1"
         class="mb-6 border-s-lg"
+        data-tour="dsd-header"
         style="border-left-color: rgb(var(--v-theme-primary)) !important;"
       >
         <v-card-text class="d-flex align-center justify-space-between flex-wrap ga-4 pa-6">
@@ -59,7 +68,7 @@
       </v-card>
 
       <!-- Tabs -->
-      <v-tabs v-model="activeTab" color="primary" class="mb-4">
+      <v-tabs v-model="activeTab" color="primary" class="mb-4" data-tour="dsd-tabs">
         <v-tab value="records" prepend-icon="mdi-table">
           Registros
         </v-tab>
@@ -73,7 +82,7 @@
         <v-window-item value="records">
 
           <!-- Filter & search bar -->
-          <v-row class="mb-3" align="center">
+          <v-row class="mb-3" align="center" data-tour="dsd-records-bar">
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="recordSearch"
@@ -111,7 +120,7 @@
           </v-row>
 
           <!-- Records table -->
-          <v-card rounded="xl" elevation="2" class="overflow-hidden border">
+          <v-card rounded="xl" elevation="2" class="overflow-hidden border" data-tour="dsd-table">
             <v-skeleton-loader v-if="loadingRecords" type="table" />
 
             <template v-else>
@@ -217,7 +226,7 @@
         <!-- ── TAB: DSL QUERY ── -->
         <v-window-item value="query">
 
-          <v-card rounded="xl" elevation="1" class="mb-4 pa-5">
+          <v-card rounded="xl" elevation="1" class="mb-4 pa-5" data-tour="dsd-dsl">
             <div class="d-flex align-center ga-2 mb-3">
               <v-icon color="primary">mdi-console</v-icon>
               <span class="text-h6 font-weight-bold">Consulta DSL</span>
@@ -409,9 +418,10 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { useJubStore } from '@/stores/jub';
+import { useTour } from '@/composables/useTour';
 import type { DataSourceDTO, DataRecord } from '@/types/index.types';
 
 definePage({
@@ -526,9 +536,21 @@ async function runQuery() {
   loadingQuery.value = false;
 }
 
+const dsdTourSteps = [
+  { element: '[data-tour="dsd-header"]',      popover: { title: 'Fuente de datos',     description: 'Nombre, identificador, formato y descripción de esta fuente. Puedes consultar cómo usarla en la guía DSL.', side: 'bottom' as const } },
+  { element: '[data-tour="dsd-tabs"]',         popover: { title: 'Pestañas',            description: '"Registros" muestra los datos cargados. "Consulta DSL" permite ejecutar consultas directamente sobre esta fuente.', side: 'bottom' as const } },
+  { element: '[data-tour="dsd-records-bar"]',  popover: { title: 'Filtrar registros',   description: 'Filtra los registros por ID espacial, temporal o de interés. Ajusta cuántos ver por página y recarga con el botón Cargar.', side: 'bottom' as const } },
+  { element: '[data-tour="dsd-table"]',        popover: { title: 'Tabla de registros',  description: 'Cada fila es un registro con su ID, región (VS), período (VT), intereses (VI) y variables numéricas. Haz clic en el ojo para ver el payload completo.', side: 'top' as const } },
+];
+
+const { startTour, replayTour } = useTour(dsdTourSteps, { pageKey: 'datasource-detail' });
+
 onMounted(async () => {
   loadingSource.value = true;
   source.value = await store.fetchDataSource(sourceId.value);
   loadingSource.value = false;
+  await loadRecords();
+  await nextTick();
+  startTour();
 });
 </script>

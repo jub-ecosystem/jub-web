@@ -2,6 +2,7 @@
   <v-app>
     <router-view />
     <auth-dialog />
+    <verify-banner />
     <v-snackbar
       v-model="appStore.snackbarVisible"
       :color="appStore.snackbarColor"

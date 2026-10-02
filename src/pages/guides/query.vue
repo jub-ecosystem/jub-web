@@ -10,8 +10,16 @@
       Volver
     </v-btn>
 
+    <!-- Tour replay button -->
+    <v-tooltip text="Ver tutorial" location="left">
+      <template #activator="{ props: tp }">
+        <v-btn v-bind="tp" icon="mdi-help-circle-outline" variant="tonal" color="primary" size="small"
+               style="position:fixed;bottom:24px;right:24px;z-index:200;" @click="replayTour" />
+      </template>
+    </v-tooltip>
+
     <!-- Hero -->
-    <v-card rounded="xl" elevation="0" class="mb-8 pa-8 text-center" color="primary" theme="dark">
+    <v-card rounded="xl" elevation="0" class="mb-8 pa-8 text-center" color="primary" theme="dark" data-tour="guide-hero">
       <v-icon size="52" class="mb-3">mdi-console-line</v-icon>
       <h1 class="text-h4 font-weight-black mb-2">Cómo realizar búsquedas usando identificadores</h1>
       <p class="text-body-1 opacity-80">
@@ -21,7 +29,7 @@
     </v-card>
 
     <!-- ── SECCIÓN 1: ¿Qué es el DSL? ── -->
-    <section class="mb-10">
+    <section class="mb-10" data-tour="guide-s1">
       <div class="d-flex align-center ga-3 mb-4">
         <v-avatar color="primary" variant="flat" size="36">
           <span class="font-weight-black text-white">1</span>
@@ -75,7 +83,7 @@
     <v-divider class="mb-10" />
 
     <!-- ── SECCIÓN 2: Paso a paso ── -->
-    <section class="mb-10">
+    <section class="mb-10" data-tour="guide-s2">
       <div class="d-flex align-center ga-3 mb-6">
         <v-avatar color="primary" variant="flat" size="36">
           <span class="font-weight-black text-white">2</span>
@@ -83,40 +91,44 @@
         <h2 class="text-h5 font-weight-black">Construye tu consulta paso a paso</h2>
       </div>
 
-      <v-timeline side="end" density="compact" line-color="primary">
-        <v-timeline-item
-          v-for="(step, i) in steps"
-          :key="i"
-          :dot-color="step.color"
-          size="small"
-        >
-          <template #opposite>
-            <span class="text-caption font-weight-bold text-grey-darken-2">Paso {{ i + 1 }}</span>
-          </template>
+      <div>
+        <div v-for="(step, i) in steps" :key="i" class="d-flex ga-3 ga-sm-4">
+          <!-- Dot + connecting line -->
+          <div class="d-flex flex-column align-center flex-shrink-0" style="width: 28px;">
+            <v-avatar :color="step.color" size="28">
+              <span class="text-caption font-weight-black text-white">{{ i + 1 }}</span>
+            </v-avatar>
+            <div
+              v-if="i < steps.length - 1"
+              class="flex-grow-1 mt-1"
+              style="width: 2px; background: rgba(var(--v-theme-primary), 0.25); min-height: 16px;"
+            />
+          </div>
 
-          <v-card rounded="xl" elevation="1" class="mb-2">
-            <v-card-title class="text-body-1 font-weight-bold d-flex align-center ga-2 pt-4">
+          <!-- Card -->
+          <v-card rounded="xl" elevation="1" class="mb-4 flex-grow-1" style="min-width: 0;">
+            <v-card-title class="text-body-1 font-weight-bold d-flex align-center ga-2 pt-4 flex-wrap">
               <v-icon :color="step.color" size="20">{{ step.icon }}</v-icon>
               {{ step.title }}
             </v-card-title>
             <v-card-text>
               <p class="text-body-2 text-grey-darken-1 mb-3">{{ step.description }}</p>
-              <div v-if="step.example" class="rounded-lg pa-3" style="background: #1e1e2e;">
-                <code class="text-caption font-monospace" style="color: #cdd6f4;">{{ step.example }}</code>
+              <div v-if="step.example" class="rounded-lg pa-3" style="background: #1e1e2e; overflow-x: auto;">
+                <code class="text-caption font-monospace" style="color: #cdd6f4; white-space: nowrap;">{{ step.example }}</code>
               </div>
               <div v-if="step.note" class="mt-3">
                 <v-alert density="compact" type="warning" variant="tonal" rounded="lg" :text="step.note" />
               </div>
             </v-card-text>
           </v-card>
-        </v-timeline-item>
-      </v-timeline>
+        </div>
+      </div>
     </section>
 
     <v-divider class="mb-10" />
 
     <!-- ── SECCIÓN 3: Ejemplos reales ── -->
-    <section class="mb-10">
+    <section class="mb-10" data-tour="guide-s3">
       <div class="d-flex align-center ga-3 mb-6">
         <v-avatar color="primary" variant="flat" size="36">
           <span class="font-weight-black text-white">3</span>
@@ -137,13 +149,14 @@
             </v-card-item>
             <v-card-text>
               <p class="text-body-2 text-grey-darken-1 mb-3">{{ ex.explanation }}</p>
-              <div class="rounded-lg pa-3 d-flex align-center justify-space-between" style="background: #1e1e2e;">
-                <code class="text-caption font-monospace" style="color: #cdd6f4; word-break: break-all;">{{ ex.query }}</code>
+              <div class="rounded-lg pa-3 d-flex align-start flex-wrap ga-2 justify-space-between" style="background: #1e1e2e;">
+                <code class="text-caption font-monospace flex-grow-1" style="color: #cdd6f4; word-break: break-all;">{{ ex.query }}</code>
                 <v-btn
                   icon="mdi-content-copy"
                   variant="text"
                   size="x-small"
                   color="grey"
+                  class="flex-shrink-0"
                   @click="copyQuery(ex.query)"
                 />
               </div>
@@ -156,7 +169,7 @@
     <v-divider class="mb-10" />
 
     <!-- ── SECCIÓN 4: Operadores matemáticos ── -->
-    <section class="mb-10">
+    <section class="mb-10" data-tour="guide-s4">
       <div class="d-flex align-center ga-3 mb-4">
         <v-avatar color="primary" variant="flat" size="36">
           <span class="font-weight-black text-white">4</span>
@@ -258,7 +271,7 @@
     </section>
 
     <!-- CTA -->
-    <v-card rounded="xl" elevation="1" class="pa-8 text-center" color="grey-lighten-5">
+    <v-card rounded="xl" elevation="1" class="pa-8 text-center" color="grey-lighten-5" data-tour="guide-cta">
       <v-icon size="40" color="primary" class="mb-3">mdi-database-search</v-icon>
       <h3 class="text-h6 font-weight-bold mb-2">¿Listo para consultar?</h3>
       <p class="text-body-2 text-grey-darken-1 mb-4">
@@ -285,7 +298,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
+import { useTour } from '@/composables/useTour';
 
 definePage({
   name: 'QueryGuide',
@@ -296,6 +310,22 @@ definePage({
 });
 
 const copiedSnack = ref(false);
+
+const guideTourSteps = [
+  { element: '[data-tour="guide-hero"]', popover: { title: 'Guía de búsqueda DSL',   description: 'Aprende a usar el lenguaje JUB DSL para consultar datos científicos de forma precisa y expresiva.', side: 'bottom' as const } },
+  { element: '[data-tour="guide-s1"]',   popover: { title: '¿Qué es el DSL?',        description: 'Explica la estructura general del lenguaje: prefijos (VS, VT, VI, VO, BY) y cómo combinarlos para construir consultas.', side: 'bottom' as const } },
+  { element: '[data-tour="guide-s2"]',   popover: { title: 'Paso a paso',            description: 'Guía progresiva desde la consulta más básica hasta consultas con operaciones matemáticas y agrupaciones.', side: 'top' as const } },
+  { element: '[data-tour="guide-s3"]',   popover: { title: 'Ejemplos reales',        description: 'Consultas listas para copiar y usar. Haz clic en el ícono de copia para llevarlas a cualquier buscador.', side: 'top' as const } },
+  { element: '[data-tour="guide-s4"]',   popover: { title: 'Operaciones con VO/BY',  description: 'Aprende a calcular promedios, sumas y conteos sobre variables numéricas y a desglosar los resultados por dimensión.', side: 'top' as const } },
+  { element: '[data-tour="guide-cta"]',  popover: { title: '¿Listo para consultar?', description: 'Ve directamente a las fuentes de datos y prueba las consultas DSL que acabas de aprender.', side: 'top' as const } },
+];
+
+const { startTour, replayTour } = useTour(guideTourSteps, { pageKey: 'query-guide' });
+
+onMounted(async () => {
+  await nextTick();
+  startTour();
+});
 
 async function copyQuery(query: string) {
   await navigator.clipboard.writeText(query);
@@ -328,7 +358,7 @@ const steps = [
     note: null,
   },
   {
-    title: 'Agrega un filtro temporal (VT) — opcional',
+    title: 'Agrega un filtro temporal (VT)',
     description: 'Si quieres acotar por año o rango de fechas, encadena un VT. El valor debe ser un identificador del catálogo TEMPORAL.',
     example: 'jub.v1.VS(MX).VT(2024)',
     icon: 'mdi-calendar-outline',
@@ -336,7 +366,7 @@ const steps = [
     note: null,
   },
   {
-    title: 'Agrega variables de interés (VI) — opcional',
+    title: 'Agrega variables de interés (VI)',
     description: 'Usa VI para filtrar por categorías como sexo, grupo etario o cualquier dimensión de interés. Puedes encadenar múltiples VI.',
     example: 'jub.v1.VS(MX).VT(2024).VI(MASCULINO)',
     icon: 'mdi-tag-outline',
@@ -344,7 +374,7 @@ const steps = [
     note: null,
   },
   {
-    title: 'Agrega operaciones matemáticas (VO) — para análisis',
+    title: 'Agrega operaciones matemáticas (VO)',
     description: 'Si necesitas calcular un promedio, suma o conteo sobre una variable numérica, usa VO con la función deseada.',
     example: 'jub.v1.VS(MX).VT(2024).VO(AVG(EDAD))',
     icon: 'mdi-function',
@@ -352,7 +382,7 @@ const steps = [
     note: null,
   },
   {
-    title: 'Agrupa por dimensión (BY) — con VO',
+    title: 'Agrupa por dimensión (BY)',
     description: 'Cuando usas VO, puedes desglosar los resultados por una dimensión con BY. El identificador es el "value" del catálogo de esa dimensión.',
     example: 'jub.v1.VS(MX).VT(2024).VO(AVG(EDAD)).BY(SEXO)',
     icon: 'mdi-group',

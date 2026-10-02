@@ -31,10 +31,10 @@
             Prueba nuestra<br>plataforma 
         </v-btn>
 
-        <v-btn color="surface-light"  rounded="lg" size="x-large" class="px-6  text-black font-weight-bold text-none" 
+        <!-- <v-btn color="surface-light"  rounded="lg" size="x-large" class="px-6  text-black font-weight-bold text-none" 
              height="80" :width="name === 'xs' ? '100%' : '280'" >
             ¿Qué es la plataforma<br>de unificación?
-        </v-btn>
+        </v-btn> -->
 
       </div>
 

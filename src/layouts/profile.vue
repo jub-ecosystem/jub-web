@@ -11,7 +11,7 @@
 </template>
 <script lang="ts" setup>
   //
-  const drawer = ref(true)
+  const drawer = ref(false)
   const goProfile = ()=>{
     
   }

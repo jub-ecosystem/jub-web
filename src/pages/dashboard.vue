@@ -2,9 +2,9 @@
   <v-container max-width="1400" class="py-8">
 
     <v-row justify="center" class="mb-8 mt-2">
-      <v-col cols="12" lg="10">
+      <v-col cols="12" >
 
-        <div class="text-center mb-6">
+        <div class="text-center mb-6" data-tour="dash-header">
           <h1 class="text-h3 font-weight-black mb-2">Observatorios</h1>
           <p class="text-body-1 text-grey-darken-1">
             Busca observatorios filtrando por región, período de tiempo y categorías de interés.
@@ -18,13 +18,18 @@
             <v-row v-if="!advancedMode">
 
               <!-- ── VS: Espacio ── -->
-              <v-col cols="12" md="4">
+              <v-col cols="12" md="4" data-tour="dash-vs">
                 <div class="d-flex align-center ga-2 mb-3">
                   <v-avatar color="blue" variant="tonal" size="28" rounded="lg">
                     <v-icon size="16">mdi-map-marker-outline</v-icon>
                   </v-avatar>
                   <span class="text-subtitle-2 font-weight-bold">Variable Espacial</span>
                   <v-chip size="x-small" color="blue" variant="tonal" class="font-monospace font-weight-black">VS</v-chip>
+                  <v-tooltip location="top" text="Actualizar">
+                    <template #activator="{ props: rp }">
+                      <v-icon v-bind="rp" size="16" :color="reloadingType === 'VS' ? 'blue' : 'grey-lighten-1'" :class="reloadingType === 'VS' ? 'mdi-spin cursor-pointer' : 'cursor-pointer'" @click="reloadItems('VS')">mdi-refresh</v-icon>
+                    </template>
+                  </v-tooltip>
                   <v-tooltip location="top" max-width="280" text="Filtra por entidad, estado o país. Selecciona una o varias regiones de la lista.">
                     <template #activator="{ props: tp }">
                       <v-icon v-bind="tp" size="16" color="grey-lighten-1" class="cursor-help">mdi-help-circle-outline</v-icon>
@@ -70,13 +75,18 @@
               </v-col>
 
               <!-- ── VT: Tiempo ── -->
-              <v-col cols="12" md="4">
+              <v-col cols="12" md="4" data-tour="dash-vt">
                 <div class="d-flex align-center ga-2 mb-3">
                   <v-avatar color="teal" variant="tonal" size="28" rounded="lg">
                     <v-icon size="16">mdi-calendar-outline</v-icon>
                   </v-avatar>
                   <span class="text-subtitle-2 font-weight-bold">Variable Temporal</span>
                   <v-chip size="x-small" color="teal" variant="tonal" class="font-monospace font-weight-black">VT</v-chip>
+                  <v-tooltip location="top" text="Actualizar">
+                    <template #activator="{ props: rp }">
+                      <v-icon v-bind="rp" size="16" :color="reloadingType === 'VT' ? 'teal' : 'grey-lighten-1'" :class="reloadingType === 'VT' ? 'mdi-spin cursor-pointer' : 'cursor-pointer'" @click="reloadItems('VT')">mdi-refresh</v-icon>
+                    </template>
+                  </v-tooltip>
                   <v-tooltip location="top" max-width="280" text="Filtra por año o período. Se envía el código numérico del período (ej: 2024).">
                     <template #activator="{ props: tp }">
                       <v-icon v-bind="tp" size="16" color="grey-lighten-1" class="cursor-help">mdi-help-circle-outline</v-icon>
@@ -121,13 +131,18 @@
               </v-col>
 
               <!-- ── VI: Intereses ── -->
-              <v-col cols="12" md="4">
+              <v-col cols="12" md="4" data-tour="dash-vi">
                 <div class="d-flex align-center ga-2 mb-3">
                   <v-avatar color="green" variant="tonal" size="28" rounded="lg">
                     <v-icon size="16">mdi-tag-outline</v-icon>
                   </v-avatar>
                   <span class="text-subtitle-2 font-weight-bold">Variable de Interés</span>
                   <v-chip size="x-small" color="green" variant="tonal" class="font-monospace font-weight-black">VI</v-chip>
+                  <v-tooltip location="top" text="Actualizar">
+                    <template #activator="{ props: rp }">
+                      <v-icon v-bind="rp" size="16" :color="reloadingType === 'VI' ? 'green' : 'grey-lighten-1'" :class="reloadingType === 'VI' ? 'mdi-spin cursor-pointer' : 'cursor-pointer'" @click="reloadItems('VI')">mdi-refresh</v-icon>
+                    </template>
+                  </v-tooltip>
                   <v-tooltip location="top" max-width="280" text="Variables de clasificación como sexo, grupo de edad, diagnóstico, etc.">
                     <template #activator="{ props: tp }">
                       <v-icon v-bind="tp" size="16" color="grey-lighten-1" class="cursor-help">mdi-help-circle-outline</v-icon>
@@ -189,45 +204,59 @@
             <v-divider class="my-5" />
 
             <!-- Bottom bar: DSL + actions -->
-            <div class="d-flex align-center justify-space-between flex-wrap ga-3">
+            <div class="d-flex flex-column flex-md-row align-md-center justify-md-space-between ga-3">
 
               <!-- DSL preview -->
-              <div class="d-flex align-center ga-2 flex-wrap min-w-0">
+              <div class="d-flex align-center ga-2 flex-wrap min-w-0 w-100 w-md-auto" data-tour="dash-dsl">
                 <v-icon size="small" color="grey-darken-1">mdi-code-braces</v-icon>
                 <span class="text-caption font-weight-bold text-grey-darken-1 flex-shrink-0">Consulta:</span>
                 <code
                   class="text-caption font-monospace px-2 py-1 rounded-lg text-primary text-truncate"
-                  style="background: rgba(var(--v-theme-primary), .08); max-width: 380px; display: block;"
+                  style="background: rgba(var(--v-theme-primary), .08); max-width: 100%; display: block;"
                 >{{ advancedMode ? advancedQuery : computedDSL }}</code>
                 <v-btn icon="mdi-content-copy" variant="text" size="x-small" color="grey" @click="copyDSL" />
               </div>
 
               <!-- Actions -->
-              <div class="d-flex ga-2 align-center flex-shrink-0 flex-wrap">
+              <div class="d-flex ga-2 ga-md-4 align-center flex-wrap" data-tour="dash-controls">
                 <v-switch
                   v-model="advancedMode"
                   label="Modo avanzado"
                   density="compact"
                   hide-details
                   color="primary"
+                  inset
                   class="flex-shrink-0"
                   @update:model-value="onToggleAdvanced"
                 />
-                <div class="d-flex align-center ga-1">
-                  <v-checkbox
-                    v-model="strict"
-                    label="Búsqueda estricta"
-                    density="compact"
-                    hide-details
-                    color="primary"
-                    class="flex-shrink-0"
-                  />
-                  <v-tooltip location="top" max-width="300" text="En modo estricto todos los términos de la consulta deben coincidir exactamente con los datos del observatorio.">
-                    <template #activator="{ props: tp }">
-                      <v-icon v-bind="tp" size="16" color="grey-lighten-1" class="cursor-help">mdi-help-circle-outline</v-icon>
-                    </template>
-                  </v-tooltip>
-                </div>
+                <v-tooltip location="top" max-width="300" text="En modo estricto todos los términos de la consulta deben coincidir exactamente con los datos del observatorio.">
+                  <template #activator="{ props: tp }">
+                    <v-switch
+                      v-bind="tp"
+                      v-model="strict"
+                      label="Búsqueda estricta"
+                      density="compact"
+                      hide-details
+                      color="deep-purple"
+                      inset
+                      class="flex-shrink-0"
+                    />
+                  </template>
+                </v-tooltip>
+                <v-tooltip location="top" max-width="300" text="Omite el caché del servidor y fuerza una consulta fresca a la base de datos.">
+                  <template #activator="{ props: tp }">
+                    <v-switch
+                      v-bind="tp"
+                      v-model="noCache"
+                      label="Sin caché"
+                      density="compact"
+                      hide-details
+                      color="amber-darken-2"
+                      inset
+                      class="flex-shrink-0"
+                    />
+                  </template>
+                </v-tooltip>
                 <v-btn
                   variant="text"
                   color="grey-darken-1"
@@ -244,11 +273,12 @@
                   variant="flat"
                   rounded="pill"
                   prepend-icon="mdi-magnify"
-                  class="px-6 font-weight-bold"
+                  class="px-6 font-weight-bold w-100 w-md-auto"
                   :loading="jubStore.isLoading"
-                  @click="executeSearch"
+                  :disabled="searchCooldown > 0"
+                  @click="handleSearchClick"
                 >
-                  Buscar
+                  {{ searchCooldown > 0 ? `Espera (${searchCooldown}s)` : 'Buscar' }}
                 </v-btn>
               </div>
             </div>
@@ -273,15 +303,56 @@
       </v-col>
     </v-row>
 
+    <!-- ── Búsquedas populares ── -->
+    <v-row v-if="loadingObsSuggestions || obsSuggestions.length > 0" class="mt-2 mb-2">
+      <v-col cols="12" lg="10" class="mx-auto" data-tour="dash-suggestions">
+        <div class="d-flex align-center ga-2 mb-3">
+          <v-icon size="18" color="grey-darken-2">mdi-trending-up</v-icon>
+          <span class="text-caption font-weight-bold text-grey-darken-2 text-uppercase" style="letter-spacing: .06em;">Búsquedas populares</span>
+        </div>
+
+        <div v-if="loadingObsSuggestions && obsSuggestions.length === 0" class="d-flex flex-wrap ga-2">
+          <v-skeleton-loader v-for="n in 4" :key="n" type="chip" width="180" />
+        </div>
+
+        <div v-else class="d-flex flex-wrap ga-2">
+          <v-chip
+            v-for="s in obsSuggestions"
+            :key="s.query"
+            variant="tonal"
+            color="primary"
+            size="default"
+            class="font-monospace text-caption cursor-pointer"
+            style="max-width: 340px;"
+            @click="applyObsSuggestion(s.query)"
+          >
+            <span class="text-truncate">{{ s.query.length > 42 ? s.query.slice(0, 42) + '…' : s.query }}</span>
+            <template #append>
+              <v-chip size="x-small" color="primary" variant="flat" class="ml-2 font-weight-bold">{{ s.hit_count }}</v-chip>
+            </template>
+          </v-chip>
+        </div>
+      </v-col>
+    </v-row>
+
     <!-- Results header -->
     <template v-if="searchCounter > 0">
-      <v-row align="center" justify="space-between" class="mb-4">
-        <v-col cols="auto">
+      <v-row align="center" justify="space-between" class="mb-4" data-tour="dash-results-header">
+        <v-col cols="auto" class="d-flex align-center ga-2">
           <span class="text-body-2 font-weight-bold text-grey-darken-1">
             {{ filteredObservatories.length }}
             observatorio{{ filteredObservatories.length !== 1 ? 's' : '' }}
             encontrado{{ filteredObservatories.length !== 1 ? 's' : '' }}
           </span>
+          <v-chip v-if="advancedMode" size="x-small" color="primary" variant="tonal" prepend-icon="mdi-code-braces" class="font-weight-bold">
+            Modo avanzado
+          </v-chip>
+          <v-chip v-if="strict" size="x-small" color="deep-purple" variant="tonal" prepend-icon="mdi-format-letter-case-upper" class="font-weight-bold">
+            Búsqueda estricta
+          </v-chip>
+          <v-chip v-if="noCache" size="x-small" color="amber-darken-2" variant="tonal" prepend-icon="mdi-cached" class="font-weight-bold">
+            Sin caché
+          </v-chip>
         </v-col>
         <v-col cols="auto">
           <v-btn-toggle
@@ -311,9 +382,10 @@
     <!-- Grid results -->
     <v-row v-else-if="viewMode === 'grid' && filteredObservatories.length > 0" class="d-flex align-stretch">
       <v-col
-        v-for="obs in filteredObservatories"
+        v-for="(obs, index) in filteredObservatories"
         :key="obs.observatory_id"
         cols="12" sm="6" md="4"
+        :data-tour="index === 0 ? 'dash-first-card' : undefined"
       >
         <ObservatoryCard
           :observatory="obs"
@@ -362,7 +434,6 @@
             headline="Sin resultados"
             title="No hay observatorios que coincidan con esta consulta."
             text="Intenta con otros identificadores, cambia el operador AND/OR, o deja los campos vacíos para ver todos."
-            action-text="Crear Observatorio"
             color="primary"
             action-color="black"
             @click:action="showCreateDialog = true"
@@ -390,11 +461,20 @@
       <v-icon start>mdi-check</v-icon> Consulta copiada
     </v-snackbar>
 
+    <!-- Tour replay button -->
+    <v-tooltip text="Ver tutorial" location="left">
+      <template #activator="{ props: tp }">
+        <v-btn v-bind="tp" icon="mdi-help-circle-outline" variant="tonal" color="primary" size="small"
+               style="position:fixed;bottom:24px;right:24px;z-index:200;" @click="replayTour" />
+      </template>
+    </v-tooltip>
+
   </v-container>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
+import { useTour } from '@/composables/useTour';
 import { type ObservatoryDTO, type ObservatoryStatsDTO } from '@/types/index.types';
 import { useJubStore } from '@/stores/jub';
 import { useAuthStore } from '@/stores/auth';
@@ -414,8 +494,16 @@ const filteredObservatories = ref<ObservatoryDTO[]>([]);
 const viewMode              = ref<'grid' | 'table'>('grid');
 const searchCounter         = ref(0);
 const loadingItems          = ref(false);
+const reloadingType         = ref<string | null>(null);
+const typeMap               = { VS: 'SPATIAL', VT: 'TEMPORAL', VI: 'INTEREST' } as const;
+const reloadItems           = async (key: 'VS' | 'VT' | 'VI') => {
+  reloadingType.value = key;
+  items.value[key] = await jubStore.fetchCatalogItemsByType(typeMap[key], true);
+  reloadingType.value = null;
+};
 const copiedSnack           = ref(false);
 const strict                = ref(false);
+const noCache               = ref(false);
 const advancedMode          = ref(false);
 const advancedQuery         = ref('');
 const statsLoading          = ref(false);
@@ -430,6 +518,43 @@ const items = ref<Record<'VS' | 'VT' | 'VI', Array<{ title: string; value: strin
 
 const operators = ref({ vs: 'OR', vt: 'AND', vi: 'AND' });
 const form      = ref({ vs: [] as string[], vt: [] as string[], vi: [] as string[] });
+
+// ── Observatory suggestions ───────────────────────────────────────────────────
+const OBS_SUGGESTIONS_KEY   = 'jub:suggestions:observatories';
+const obsSuggestions        = ref<Array<{ query: string; hit_count: number }>>([]);
+const loadingObsSuggestions = ref(false);
+
+const loadObsSuggestions = async () => {
+  const cached = localStorage.getItem(OBS_SUGGESTIONS_KEY);
+  if (cached) {
+    try { obsSuggestions.value = JSON.parse(cached); } catch { /* ignore */ }
+  }
+  loadingObsSuggestions.value = true;
+  const res = await jubStore.fetchObservatorySuggestions();
+  loadingObsSuggestions.value = false;
+  if (res?.suggestions?.length) {
+    obsSuggestions.value = res.suggestions;
+    localStorage.setItem(OBS_SUGGESTIONS_KEY, JSON.stringify(res.suggestions));
+  }
+};
+
+const applyObsSuggestion = (query: string) => {
+  advancedMode.value  = true;
+  advancedQuery.value = query;
+  executeSearch();
+};
+
+const searchCooldown = ref(0);
+let _searchTimer: ReturnType<typeof setInterval> | null = null;
+const handleSearchClick = () => {
+  if (searchCooldown.value > 0) return;
+  searchCooldown.value = 3;
+  _searchTimer = setInterval(() => {
+    searchCooldown.value--;
+    if (searchCooldown.value <= 0) { clearInterval(_searchTimer!); _searchTimer = null; }
+  }, 1000);
+  executeSearch();
+};
 
 // Build readable sentence for the operator preview
 function buildSentence(arr: string[], op: string, noun: string): string {
@@ -453,8 +578,29 @@ async function copyDSL() {
   copiedSnack.value = true;
 }
 
+function parseDSL(dsl: string) {
+  const m = dsl.match(/jub\.v1\.VS\(([^)]*)\)\.VT\(([^)]*)\)\.VI\(([^)]*)\)/);
+  if (!m) return null;
+  const seg = (s: string | null | undefined): { values: string[]; op: 'OR' | 'AND' } => {
+    if (s === '*' || s === null || s === undefined) return { values: [], op: 'OR' };
+    if (s.includes(' AND ')) return { values: s.split(' AND ').map(v => v.trim()), op: 'AND' };
+    if (s.includes(' OR '))  return { values: s.split(' OR ').map(v => v.trim()),  op: 'OR'  };
+    return { values: [s.trim()], op: 'OR' };
+  };
+  const vs = seg(m[1]), vt = seg(m[2]), vi = seg(m[3]);
+  return { vs: vs.values, vt: vt.values, vi: vi.values, vsOp: vs.op, vtOp: vt.op, viOp: vi.op };
+}
+
 function onToggleAdvanced(val: boolean | null) {
-  if (val) advancedQuery.value = computedDSL.value;
+  if (val) {
+    advancedQuery.value = computedDSL.value;
+  } else {
+    const parsed = parseDSL(advancedQuery.value);
+    if (parsed) {
+      form.value      = { vs: parsed.vs, vt: parsed.vt, vi: parsed.vi };
+      operators.value = { vs: parsed.vsOp, vt: parsed.vtOp, vi: parsed.viOp };
+    }
+  }
 }
 
 function resetForm() {
@@ -467,8 +613,9 @@ async function executeSearch() {
   skip.value = 0;
   statsMap.value = new Map();
   const query = advancedMode.value ? advancedQuery.value : computedDSL.value;
-  filteredObservatories.value = await jubStore.search_observatories(query, strict.value, 0, pageSize.value);
-  canLoadMore.value = filteredObservatories.value.length === pageSize.value;
+  const results = await jubStore.search_observatories(query, strict.value, 0, pageSize.value, noCache.value);
+  filteredObservatories.value = results.slice().sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0));
+  canLoadMore.value = results.length === pageSize.value;
   if (filteredObservatories.value.length > 0) {
     statsLoading.value = true;
     const ids = filteredObservatories.value.map(o => o.observatory_id);
@@ -484,8 +631,9 @@ async function loadMore() {
   loadingMore.value = true;
   skip.value += pageSize.value;
   const query = advancedMode.value ? advancedQuery.value : computedDSL.value;
-  const more = await jubStore.search_observatories(query, strict.value, skip.value, pageSize.value);
-  filteredObservatories.value.push(...more);
+  const more = await jubStore.search_observatories(query, strict.value, skip.value, pageSize.value, noCache.value);
+  const sorted = more.slice().sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0));
+  filteredObservatories.value.push(...sorted);
   canLoadMore.value = more.length === pageSize.value;
   if (more.length > 0) {
     const ids = more.map(o => o.observatory_id);
@@ -501,7 +649,20 @@ function goToDetails(obs: ObservatoryDTO) {
   router.push({ name: 'ObservatoryDetails', params: { observatory_id: obs.observatory_id } });
 }
 
+const dashboardTourSteps = [
+  { element: '[data-tour="dash-header"]',   popover: { title: 'Explora observatorios',      description: 'Desde aquí puedes buscar y explorar los observatorios disponibles en la plataforma.', side: 'bottom' as const } },
+  { element: '[data-tour="dash-vs"]',        popover: { title: 'Variable Espacial (VS)',        description: 'Filtra observatorios por región geográfica: estado, municipio o país. Puedes elegir una o varias y combinarlas.', side: 'bottom' as const } },
+  { element: '[data-tour="dash-vt"]',        popover: { title: 'Variable Temporal (VT)',        description: 'Filtra por año o período de tiempo. Combina varios períodos con el operador "Todos" o "Cualquiera".', side: 'bottom' as const } },
+  { element: '[data-tour="dash-vi"]',        popover: { title: 'Variable de Interés (VI)',      description: 'Categorías temáticas como salud, demografía, economía, etc. Agrúpalas como necesites.', side: 'bottom' as const } },
+  { element: '[data-tour="dash-dsl"]',       popover: { title: 'Vista previa de la consulta',              description: 'Aquí se muestra la consulta generada automáticamente con los filtros activos.', side: 'top' as const } },
+  { element: '[data-tour="dash-controls"]',  popover: { title: 'Controles de búsqueda',         description: 'Activa "Modo avanzado" para escribir DSL directamente o "Búsqueda estricta" para coincidencias exactas. Usa "Buscar" para ejecutar.', side: 'top' as const } },
+  { element: '[data-tour="dash-suggestions"]', popover: { title: 'Búsquedas populares',         description: 'Consultas frecuentes de otros usuarios. Haz clic en una para aplicarla directamente al formulario.', side: 'bottom' as const } },
+];
+
+const { startTour, replayTour } = useTour(dashboardTourSteps, { pageKey: 'dashboard' });
+
 onMounted(async () => {
+  loadObsSuggestions();
   loadingItems.value = true;
   const [VS, VT, VI] = await Promise.all([
     jubStore.fetchCatalogItemsByType('SPATIAL'),
@@ -511,6 +672,8 @@ onMounted(async () => {
   items.value    = { VS, VT, VI };
   loadingItems.value = false;
   await executeSearch();
+  await nextTick();
+  startTour();
 });
 </script>
 

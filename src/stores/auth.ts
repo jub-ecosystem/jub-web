@@ -10,6 +10,11 @@ import {
 } from '@/types/index.types'
 
 
+export interface VerifyBannerState {
+    status: 'retrying' | 'success' | 'failed';
+    attempt: number;
+    countdown: number;
+}
 export const useAuthStore = defineStore('auth', () => {
     const user            = ref<User | null>(null);
     const settings        = ref<UserSettings | null>(null);
@@ -18,6 +23,9 @@ export const useAuthStore = defineStore('auth', () => {
     const isVerified      = ref(false);
     const showAuthDialog  = ref(false);
     const pendingRedirect = ref<string | null>(null);
+
+    const verifyBanner  = ref<VerifyBannerState | null>(null);
+    const _verifyAbort  = ref<boolean>(false);
 
     const XOLO_API_URL = import.meta.env.VITE_XOLO_API_URL || 'http://localhost:10000/api/v4';
     const JUB_API_URL = import.meta.env.VITE_JUB_API_URL || 'http://localhost:5000/api/v2';
@@ -31,7 +39,7 @@ export const useAuthStore = defineStore('auth', () => {
         isLoading.value  = true;
         error.value      = null;
         isVerified.value = false;
-        console.log("Verifying token with data:", data);
+        // console.log("Verifying token with data:", data);
         try {
             const response = await fetch(`${XOLO_API_URL}/users/verify`, {
                 method: "POST",
@@ -64,6 +72,42 @@ export const useAuthStore = defineStore('auth', () => {
         }
 
         return isVerified.value;
+    }
+
+    async function verifyWithRetry(dto: VerifyDTO, maxAttempts = 3): Promise<boolean> {
+        const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+        _verifyAbort.value = false;
+
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            if (_verifyAbort.value) return false;
+
+            const ok = await verifyToken(dto);
+            if (ok) {
+                if (verifyBanner.value) {
+                    verifyBanner.value = { status: 'success', attempt, countdown: 0 };
+                    await delay(2200);
+                    verifyBanner.value = null;
+                }
+                return true;
+            }
+            if (attempt < maxAttempts) {
+                for (let s = 4; s > 0; s--) {
+                    if (_verifyAbort.value) return false;
+                    verifyBanner.value = { status: 'retrying', attempt, countdown: s };
+                    await delay(1000);
+                }
+            } else {
+                verifyBanner.value = { status: 'failed', attempt, countdown: 0 };
+                showAuthDialog.value = true;
+            }
+        }
+        return false;
+    }
+
+    function cancelRetry(): void {
+        _verifyAbort.value = true;
+        verifyBanner.value = null;
+        showAuthDialog.value = true;
     }
 
     function getUser(): User | null {
@@ -130,6 +174,8 @@ export const useAuthStore = defineStore('auth', () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token") || ""}`,
+                    "Temporal-Secret-Key": localStorage.getItem("secret") || ""
                 },
                 body: JSON.stringify(payload),
             });
@@ -159,13 +205,16 @@ export const useAuthStore = defineStore('auth', () => {
         showAuthDialog,
         pendingRedirect,
         settings,
+        verifyBanner,
         getUser,
         verifyToken,
+        verifyWithRetry,
+        cancelRetry,
         login,
         logout,
         clearLocalStorage
     }
 
 },{
-    persist:true
+    persist: { omit: ['verifyBanner', 'isLoading', 'error'] }
 })

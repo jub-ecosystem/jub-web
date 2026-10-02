@@ -14,59 +14,68 @@
     <v-divider></v-divider>
 
     <v-list density="compact" nav @click.capture="closeOnMobile">
-      <v-tooltip location="end" text="Observatorios" :disabled="mobile">
+      <v-tooltip location="end" :disabled="mobile">
         <template #activator="{ props: tip }">
           <v-list-item v-bind="tip" prepend-icon="mdi-telescope" title="Observatorios" value="observatories"
             :to="{ name: 'Dashboard' }" />
         </template>
+        <span>Observatorios</span>
       </v-tooltip>
-      <v-tooltip location="end" text="Catálogos" :disabled="mobile">
+      <v-tooltip location="end" :disabled="mobile">
         <template #activator="{ props: tip }">
           <v-list-item v-bind="tip" prepend-icon="mdi-book-open-variant-outline" title="Catálogos" value="catalogs"
             :to="{ name: 'Catalogs' }" />
         </template>
+        <span>Catálogos</span>
       </v-tooltip>
-      <v-tooltip location="end" text="Servicios" :disabled="mobile">
+      <v-tooltip location="end" :disabled="mobile">
         <template #activator="{ props: tip }">
-          <v-list-item v-bind="tip" prepend-icon="mdi-api" title="Servicios" value="services"
+          <v-list-item v-bind="tip" prepend-icon="mdi-sitemap" title="Servicios" value="services"
             :to="{ name: 'ExternalServices' }" />
         </template>
+        <span>Servicios</span>
       </v-tooltip>
-      <v-tooltip location="end" text="Fuentes de datos" :disabled="mobile">
+      <v-tooltip location="end" :disabled="mobile">
         <template #activator="{ props: tip }">
           <v-list-item v-bind="tip" prepend-icon="mdi-database-outline" title="Fuentes de datos" value="datasources"
             :to="{ name: 'DataSources' }" />
         </template>
+        <span>Fuentes de datos</span>
       </v-tooltip>
-      <v-tooltip location="end" text="Generador de gráficas" :disabled="mobile">
+      <v-tooltip location="end" :disabled="mobile">
         <template #activator="{ props: tip }">
           <v-list-item v-bind="tip" prepend-icon="mdi-chart-bar" title="Generador de gráficas" value="charts"
             :to="{ name: 'Charts' }" />
         </template>
+        <span>Generador de gráficas</span>
       </v-tooltip>
-      <v-tooltip location="end" text="Tareas" :disabled="mobile">
+      <v-tooltip location="end" :disabled="mobile">
         <template #activator="{ props: tip }">
           <v-list-item v-bind="tip" prepend-icon="mdi-clipboard-list-outline" title="Tareas" value="tasks"
             :to="{ name: 'TasksIndex' }" />
         </template>
+        <span>Tareas</span>
       </v-tooltip>
-      <v-tooltip location="end" text="Guía de búsqueda" :disabled="mobile">
+      <v-tooltip location="end" :disabled="mobile">
         <template #activator="{ props: tip }">
           <v-list-item v-bind="tip" prepend-icon="mdi-help-circle-outline" title="Guía de búsqueda" value="query-guide"
             :to="{ name: 'QueryGuide' }" />
         </template>
+        <span>Guía de búsqueda</span>
       </v-tooltip>
-      <v-tooltip location="end" text="Configuración" :disabled="mobile">
+      <v-tooltip location="end" :disabled="mobile">
         <template #activator="{ props: tip }">
           <v-list-item v-bind="tip" prepend-icon="mdi-cog-outline" title="Configuración" value="settings"
             :to="{ name: 'Settings' }" />
         </template>
+        <span>Configuración</span>
       </v-tooltip>
-      <v-tooltip location="end" text="Cerrar sesión" :disabled="mobile">
+      <v-tooltip location="end" :disabled="mobile">
         <template #activator="{ props: tip }">
           <v-list-item v-bind="tip" prepend-icon="mdi-logout" title="Cerrar sesión" value="logout"
             @click="logout" />
         </template>
+        <span>Cerrar sesión</span>
       </v-tooltip>
     </v-list>
   </v-navigation-drawer>

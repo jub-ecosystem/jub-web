@@ -7,8 +7,156 @@
     </template>
     
     <template v-slot:append>
-      
-      <v-menu 
+
+      <!-- Jub Assistant button (only on observatory detail page) -->
+      <v-tooltip
+        v-if="assistantStore.isAvailable"
+        :model-value="assistantStore.showTooltip"
+        location="bottom"
+        no-click-animation
+      >
+        <template #activator="{ props: tipProps }">
+          <v-btn
+            v-bind="tipProps"
+            icon
+            variant="text"
+            class="mr-1 jub-assistant-btn"
+            @click="assistantStore.isOpen = !assistantStore.isOpen"
+          >
+          <v-icon size="30" color="primary">mdi-robot</v-icon>
+            <!-- <v-img src="@/assets/logo.svg" width="30" height="30" /> -->
+          </v-btn>
+        </template>
+        <span>¿Necesitas ayuda con las consultas de este observatorio?</span>
+      </v-tooltip>
+
+      <!-- Download queue panel -->
+      <v-menu
+        v-model="showDownloads"
+        :close-on-content-click="false"
+        location="bottom end"
+        offset="10"
+        transition="scale-transition"
+      >
+        <template v-slot:activator="{ props }">
+          <v-btn icon v-bind="props" variant="text" color="grey-darken-2" class="mr-1">
+            <v-badge :content="downloadCount" :model-value="downloadCount > 0" color="primary" max="99">
+              <v-icon>mdi-tray-arrow-down</v-icon>
+            </v-badge>
+          </v-btn>
+        </template>
+
+        <v-card width="360" max-height="480" rounded="xl" elevation="6" class="d-flex flex-column overflow-hidden border">
+
+          <v-toolbar color="white" density="compact" class="border-b px-2">
+            <v-toolbar-title class="text-subtitle-1 font-weight-bold">Descargas</v-toolbar-title>
+            <v-spacer />
+            <v-btn
+              v-if="downloadCount > 0"
+              variant="text" size="small" color="error"
+              class="text-none font-weight-bold text-caption"
+              @click="jubStore.cancelAllDownloads()"
+            >Cancelar todo</v-btn>
+          </v-toolbar>
+
+          <div class="overflow-y-auto flex-grow-1">
+
+            <!-- Active download -->
+            <template v-if="jubStore.activeDownloadId">
+              <div class="px-4 pt-3 pb-1">
+                <span class="text-caption font-weight-bold text-grey-darken-2 text-uppercase" style="letter-spacing:.05em;">En progreso</span>
+              </div>
+              <v-list-item class="px-4 py-2">
+                <template #prepend>
+                  <v-progress-circular indeterminate color="primary" size="20" width="2" class="mr-3" />
+                </template>
+                <v-list-item-title class="text-body-2 font-weight-medium text-truncate">
+                  {{ jubStore.downloadMeta[jubStore.activeDownloadId]?.name ?? jubStore.activeDownloadId }}
+                </v-list-item-title>
+                <v-list-item-subtitle>
+                  <v-progress-linear
+                    :indeterminate="(jubStore.downloadProgress[jubStore.activeDownloadId] ?? -1) < 0"
+                    :model-value="Math.max(0, jubStore.downloadProgress[jubStore.activeDownloadId] ?? 0)"
+                    color="primary" height="4" rounded class="mt-1"
+                  />
+                </v-list-item-subtitle>
+                <template #append>
+                  <v-btn icon="mdi-close" size="x-small" variant="text" color="error"
+                    @click="jubStore.cancelDownload(jubStore.activeDownloadId!)" />
+                </template>
+              </v-list-item>
+              <v-divider />
+            </template>
+
+            <!-- Queued items -->
+            <template v-if="jubStore.downloadQueue.length > 0">
+              <div class="px-4 pt-3 pb-1">
+                <span class="text-caption font-weight-bold text-grey-darken-2 text-uppercase" style="letter-spacing:.05em;">En cola</span>
+              </div>
+              <v-list-item v-for="(pid, i) in jubStore.downloadQueue" :key="pid" class="px-4 py-2">
+                <template #prepend>
+                  <v-avatar color="warning" variant="tonal" size="28" rounded="lg" class="mr-3 text-caption font-weight-bold">
+                    {{ i + 1 }}
+                  </v-avatar>
+                </template>
+                <v-list-item-title class="text-body-2 font-weight-medium text-truncate">
+                  {{ jubStore.downloadMeta[pid]?.name ?? pid }}
+                </v-list-item-title>
+                <template #append>
+                  <v-btn icon="mdi-close" size="x-small" variant="text" color="grey-darken-1"
+                    @click="jubStore.cancelDownload(pid)" />
+                </template>
+              </v-list-item>
+              <v-divider />
+            </template>
+
+            <!-- Completed -->
+            <template v-if="completedDownloads.length > 0">
+              <div class="px-4 pt-3 pb-1">
+                <span class="text-caption font-weight-bold text-grey-darken-2 text-uppercase" style="letter-spacing:.05em;">Completadas</span>
+              </div>
+              <v-list-item v-for="pid in completedDownloads" :key="pid" class="px-4 py-2">
+                <template #prepend>
+                  <v-avatar color="success" variant="tonal" size="28" rounded="lg" class="mr-3">
+                    <v-icon size="16">mdi-check</v-icon>
+                  </v-avatar>
+                </template>
+                <v-list-item-title class="text-body-2 font-weight-medium text-truncate">
+                  {{ jubStore.downloadMeta[pid]?.name ?? pid }}
+                </v-list-item-title>
+                <v-list-item-subtitle class="text-caption text-grey-darken-1">
+                  {{ jubStore.downloadCache[pid]?.type?.split('/')[1]?.split(';')[0]?.toUpperCase() ?? '–' }}
+                </v-list-item-subtitle>
+                <template #append>
+                  <v-btn icon="mdi-download" size="x-small" variant="text" color="primary"
+                    @click="saveFromPanel(pid)" />
+                </template>
+              </v-list-item>
+            </template>
+
+            <!-- Empty state -->
+            <div
+              v-if="!jubStore.activeDownloadId && jubStore.downloadQueue.length === 0 && completedDownloads.length === 0"
+              class="pa-6 text-center"
+            >
+              <v-icon size="40" color="grey-lighten-2" class="mb-2">mdi-tray-arrow-down</v-icon>
+              <div class="text-body-2 text-grey-darken-1">No hay descargas activas.</div>
+            </div>
+
+          </div>
+        </v-card>
+      </v-menu>
+
+      <v-chip
+        v-if="jubStore.isSlowNetwork"
+        size="small"
+        color="warning"
+        variant="tonal"
+        prepend-icon="mdi-wifi-strength-1-alert"
+        class="mr-3 font-weight-bold text-none"
+      >Red lenta</v-chip>
+
+      <v-menu
         v-model="showNotifications" 
         :close-on-content-click="false" 
         location="bottom end" 
@@ -101,6 +249,12 @@
     </template>
   </v-app-bar>
 
+  <!-- Jub Assistant panels (rendered at layout level for proper z-index) -->
+  <template v-if="assistantStore.isAvailable">
+    <JubAssistantDrawer v-if="mdAndUp" />
+    <JubAssistantModal  v-else />
+  </template>
+
   <v-main>
     <router-view />
   </v-main>
@@ -110,11 +264,14 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useJubStore } from '@/stores/jub';
+import { useAssistantStore } from '@/stores/assistant';
 import { type Notification } from '@/types/index.types';
 import { getRelativeTime } from '@/utils/date';
 import { useDisplay } from 'vuetify';
+import { V } from 'node_modules/vitest/dist/chunks/evaluatedModules.d.BxJ5omdx';
 
-const { mobile } = useDisplay();
+const { mobile, mdAndUp } = useDisplay();
+const assistantStore = useAssistantStore();
 const drawer = ref(!mobile.value);
 const router = useRouter();
 
@@ -123,6 +280,28 @@ const onBack = () => {
 };
 
 const showNotifications = ref(false);
+const showDownloads     = ref(false);
+
+const downloadCount = computed(() =>
+  (jubStore.activeDownloadId ? 1 : 0) + jubStore.downloadQueue.length
+);
+
+const completedDownloads = computed(() =>
+  Object.keys(jubStore.downloadCache)
+    .filter(pid => jubStore.downloadCache[pid]?.url)
+    .slice(-8)
+    .reverse()
+);
+
+function saveFromPanel(pid: string) {
+  const entry = jubStore.downloadCache[pid];
+  if (!entry?.url) return;
+  const ext = entry.type?.split('/')[1]?.split(';')[0] ?? 'bin';
+  const a = document.createElement('a');
+  a.href = entry.url;
+  a.download = `${pid}.${ext}`;
+  a.click();
+}
 
 
 const jubStore = useJubStore();
@@ -201,5 +380,19 @@ onMounted(async () => {
 <style scoped>
 .v-list-item {
   transition: background-color 0.2s ease;
+}
+
+@keyframes jub-heartbeat {
+  0%   { transform: scale(1);    box-shadow: 0 0 0 0   rgba(0, 171, 220, 0.5); }
+  20%  { transform: scale(1.08); box-shadow: 0 0 0 6px rgba(0, 171, 220, 0);  }
+  35%  { transform: scale(1); }
+  50%  { transform: scale(1.04); box-shadow: 0 0 0 4px rgba(0, 171, 220, 0);  }
+  80%  { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+
+.jub-assistant-btn {
+  animation: jub-heartbeat 3.5s ease-in-out infinite;
+  border-radius: 50%;
 }
 </style>

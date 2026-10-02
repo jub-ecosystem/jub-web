@@ -1,7 +1,15 @@
 <template>
   <v-container max-width="1000" class="py-8">
 
-    <div class="mb-8 d-flex align-center justify-space-between">
+    <!-- Tour replay button -->
+    <v-tooltip text="Ver tutorial" location="left">
+      <template #activator="{ props: tp }">
+        <v-btn v-bind="tp" icon="mdi-help-circle-outline" variant="tonal" color="primary" size="small"
+               style="position:fixed;bottom:24px;right:24px;z-index:200;" @click="replayTour" />
+      </template>
+    </v-tooltip>
+
+    <div class="mb-8 d-flex align-center justify-space-between" data-tour="tasks-header">
       <div>
         <h1 class="text-h4 font-weight-black mb-1">Estado de tareas</h1>
         <p class="text-body-1 text-grey-darken-1">Monitorea la generación de productos y configuración de observatorios.</p>
@@ -11,7 +19,7 @@
       </v-btn>
     </div>
 
-    <v-row class="mb-6">
+    <v-row class="mb-6" data-tour="tasks-stats">
       <v-col cols="12" sm="4">
         <v-card rounded="xl" elevation="1" class="pa-4 border-s-lg" style="border-left-color: rgb(var(--v-theme-info)) !important;">
           <div class="text-overline text-grey-darken-1">En Progreso</div>
@@ -32,7 +40,7 @@
       </v-col>
     </v-row>
 
-    <v-card rounded="xl" elevation="2" class="overflow-hidden">
+    <v-card rounded="xl" elevation="2" class="overflow-hidden" data-tour="tasks-list">
       <v-list lines="three" bg-color="surface">
 
         <template v-if="jubStore.isLoading && tasks.length === 0">
@@ -141,9 +149,10 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useJubStore } from '@/stores/jub';
 import { useAuthStore } from '@/stores/auth';
+import { useTour } from '@/composables/useTour';
 import type { TaskXDTO, TasksStatsDTO } from '@/types/index.types';
 
 definePage({
@@ -223,5 +232,17 @@ async function handleRetry(taskId: string) {
   }
 }
 
-onMounted(loadTasks);
+const tasksTourSteps = [
+  { element: '[data-tour="tasks-header"]', popover: { title: 'Estado de tareas',   description: 'Monitorea todas las tareas de generación de productos y configuración de observatorios. Usa "Actualizar" para refrescar el estado.', side: 'bottom' as const } },
+  { element: '[data-tour="tasks-stats"]',  popover: { title: 'Estadísticas',        description: 'Resumen rápido de tareas en progreso, completadas y fallidas. Los números se actualizan en tiempo real al hacer clic en Actualizar.', side: 'bottom' as const } },
+  { element: '[data-tour="tasks-list"]',   popover: { title: 'Lista de tareas',     description: 'Cada tarea muestra su título, estado, operación y fechas. Las tareas en progreso muestran una barra animada. Haz clic en "Reintentar" si alguna falló.', side: 'top' as const } },
+];
+
+const { startTour, replayTour } = useTour(tasksTourSteps, { pageKey: 'tasks' });
+
+onMounted(async () => {
+  await loadTasks();
+  await nextTick();
+  startTour();
+});
 </script>

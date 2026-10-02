@@ -20,6 +20,10 @@ declare module 'vue' {
     HeroSection: typeof import('./components/landing/sections/HeroSection.vue')['default']
     HowItWorksSection: typeof import('./components/landing/sections/HowItWorksSection.vue')['default']
     IntroductionSection: typeof import('./components/landing/sections/IntroductionSection.vue')['default']
+    JubAssistant: typeof import('./components/assistant/JubAssistant.vue')['default']
+    JubAssistantChat: typeof import('./components/assistant/JubAssistantChat.vue')['default']
+    JubAssistantDrawer: typeof import('./components/assistant/JubAssistantDrawer.vue')['default']
+    JubAssistantModal: typeof import('./components/assistant/JubAssistantModal.vue')['default']
     LandingFooter: typeof import('./components/landing/sections/LandingFooter.vue')['default']
     LogicMapSection: typeof import('./components/landing/sections/LogicMapSection.vue')['default']
     ObservatoryCard: typeof import('./components/dashboard/ObservatoryCard.vue')['default']
@@ -34,5 +38,6 @@ declare module 'vue' {
     ServiceAppBar: typeof import('./components/ServiceAppBar.vue')['default']
     StatsSection: typeof import('./components/landing/sections/StatsSection.vue')['default']
     ValueProposition: typeof import('./components/landing/sections/ValueProposition.vue')['default']
+    VerifyBanner: typeof import('./components/VerifyBanner.vue')['default']
   }
 }

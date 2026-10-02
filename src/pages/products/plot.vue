@@ -1,10 +1,27 @@
 <template>
   <v-container max-width="1400" class="py-8">
 
+    <!-- Tour replay button -->
+    <v-tooltip text="Ver tutorial" location="left">
+      <template #activator="{ props: tp }">
+        <v-btn v-bind="tp" icon="mdi-help-circle-outline" variant="tonal" color="primary" size="small"
+               style="position:fixed;bottom:24px;right:24px;z-index:200;" @click="replayTour" />
+      </template>
+    </v-tooltip>
+
     <!-- Header -->
-    <v-row class="mb-6" align="center">
+    <v-row class="mb-4" align="center" data-tour="plot-header">
       <v-col cols="12" md="8">
-        <h1 class="text-h4 font-weight-black mb-1">Generador de gráficas</h1>
+        <div class="d-flex align-center ga-3 mb-1">
+          <h1 class="text-h4 font-weight-black">Generador de gráficas</h1>
+          <v-chip
+            color="amber-darken-2"
+            variant="tonal"
+            prepend-icon="mdi-flask-outline"
+            size="small"
+            class="font-weight-bold"
+          >Experimental</v-chip>
+        </div>
         <p class="text-body-1 text-grey-darken-1">
           Selecciona una fuente de datos, configura los filtros y genera gráficos interactivos.
         </p>
@@ -16,9 +33,25 @@
       </v-col>
     </v-row>
 
+    <!-- Experimental notice -->
+    <v-alert
+      type="warning"
+      variant="tonal"
+      rounded="xl"
+      icon="mdi-flask-outline"
+      class="mb-6"
+      data-tour="plot-notice"
+    >
+      <div class="font-weight-bold mb-1">Funcionalidad experimental</div>
+      Esta herramienta se encuentra en etapa experimental y estará disponible de forma completa en la
+      <strong>Etapa 2</strong> del proyecto, para los observatorios:
+      <strong>Azomalli, IMA, Kawak, KAexla y Alerta</strong>.
+      Algunas funciones pueden no estar disponibles o cambiar sin previo aviso.
+    </v-alert>
+
     <!-- Panels grid -->
     <v-row v-if="panels.length > 0">
-      <v-col v-for="panel in panels" :key="panel.id" cols="12" md="6" xl="4">
+      <v-col v-for="(panel, index) in panels" :key="panel.id" cols="12" md="6" xl="4" :data-tour="index === 0 ? 'plot-first-panel' : undefined">
         <v-card rounded="xl" elevation="3" class="h-100 border d-flex flex-column">
           <v-card-title class="d-flex justify-space-between align-center pt-4 px-4">
             <span class="text-h6 font-weight-bold text-truncate">{{ panel.title }}</span>
@@ -485,7 +518,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
+import { useTour } from '@/composables/useTour';
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 import { LineChart, BarChart, PieChart } from 'echarts/charts';
@@ -709,6 +743,13 @@ async function savePanel() {
 
 function removePanel(id: string) { panels.value = panels.value.filter(p => p.id !== id); }
 
+const plotTourSteps = [
+  { element: '[data-tour="plot-header"]',      popover: { title: 'Generador de gráficas',   description: 'Crea visualizaciones interactivas a partir de fuentes de datos usando consultas DSL. Haz clic en "Nueva Gráfica" para comenzar.', side: 'bottom' as const } },
+  { element: '[data-tour="plot-notice"]',       popover: { title: 'Funcionalidad experimental', description: 'Esta herramienta está en fase experimental. Estará completamente disponible en la Etapa 2 del proyecto para los observatorios principales.', side: 'bottom' as const } },
+];
+
+const { startTour, replayTour } = useTour(plotTourSteps, { pageKey: 'plot' });
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 onMounted(async () => {
   loadingDataSources.value = true;
@@ -723,6 +764,8 @@ onMounted(async () => {
   ]);
   catalogItems.value = { VS, VT, VI };
   loadingCatalogs.value = false;
+  await nextTick();
+  startTour();
 });
 </script>
 
