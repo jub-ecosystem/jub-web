@@ -1,16 +1,27 @@
 import {defineStore} from 'pinia'
-import {type CatalogResponseDTO,type CatalogItemAliasDTO,type CatalogItemDTO ,type CatalogSummaryDTO, type Notification,type ObservatoryDTO,type ObservatoryStatsDTO,type ProductXDTO,type UserSettings, type DataSourceDTO, type DataRecord, type TaskXDTO, type TasksStatsDTO, type ServiceDTO, type CatalogItemXResponseDTO, type ReviewDTO, type SearchSuggestionResponseDTO, type ObservatorySuggestionResponseDTO, type CatalogXDTO} from '@/types/index.types'
+import {type CatalogResponseDTO,type CatalogItemAliasDTO,type CatalogItemDTO ,type CatalogSummaryDTO, type CatalogPageDTO, type CatalogPageQuery, type Notification,type ObservatoryDTO,type ObservatoryStatsDTO,type ProductXDTO,type UserSettings, type DataSourceDTO, type DataRecord, type TaskXDTO, type TasksStatsDTO, type ServiceDTO, type CatalogItemXResponseDTO, type ReviewDTO, type SearchSuggestionResponseDTO, type ObservatorySuggestionResponseDTO, type CatalogXDTO} from '@/types/index.types'
 import { useAuthStore } from '@/stores/auth'
+import { getEnv } from '@/utils/env'
 import type { VerifyDTO } from '@/types/index.types'
 // interface Observatory
 
+export class JubApiError extends Error {
+    status: number;
+    detail: string;
+    constructor(status: number, detail: string) {
+        super(detail);
+        this.status = status;
+        this.detail = detail;
+        this.name = 'JubApiError';
+    }
+}
 
 
 
 
 export const useJubStore = defineStore('jub', () => {
     const catalogs = ref<CatalogSummaryDTO[]>([]);
-    const API_URL = import.meta.env.VITE_JUB_API_URL || 'http://localhost:5000/api/v2';
+    const API_URL = getEnv('VITE_JUB_API_URL', 'http://localhost:5000/api/v2');
 
     function trigger401() {
         const token    = localStorage.getItem('token');
@@ -26,7 +37,6 @@ export const useJubStore = defineStore('jub', () => {
         'jubThemeLight': 'light',
         'jubThemeDark': 'dark'
     }
-    const catalog = ref<CatalogResponseDTO | null>(null);
     const catalogItemsCache    = ref<Record<string, Array<{title: string; value: string}>>>({});
     const tagDetailsStoreCache = ref<Record<string, CatalogItemXResponseDTO[]>>({});
 
@@ -42,26 +52,52 @@ export const useJubStore = defineStore('jub', () => {
     const isSlowNetwork      = computed(() => downloadSpeed.value > 0 && downloadSpeed.value < 300);
     let   _queueRunning      = false;
 
+    // GET /catalogs is paginated: returns { items, total, skip, limit, has_more }.
+    async function fetchCatalogPage(query: CatalogPageQuery = {}, signal?: AbortSignal): Promise<CatalogPageDTO> {
+        const params = new URLSearchParams();
+        // Multiple types are sent as repeated keys, never comma-joined.
+        for (const t of query.catalog_type ?? []) params.append('catalog_type', t);
+        const q = query.q?.trim();
+        if (q) params.set('q', q);
+        if (query.skip !== undefined) params.set('skip', String(query.skip));
+        if (query.limit !== undefined) params.set('limit', String(query.limit));
+
+        const qs = params.toString();
+        const response = await fetch(`${API_URL}/catalogs${qs ? `?${qs}` : ''}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                'Temporal-Secret-Key': `${localStorage.getItem("secret")}`
+            },
+            signal,
+        });
+        if (response.status === 401) trigger401();
+        if (!response.ok) {
+            const body = await response.json().catch(() => null);
+            const detail = typeof body?.detail === 'string' ? body.detail : response.statusText;
+            throw new JubApiError(response.status, detail);
+        }
+        return await response.json() as CatalogPageDTO;
+    }
+
+    // Loads every catalog (all pages) into `catalogs`. Pickers and DSL helpers
+    // filter this list client-side, so it must not be capped at the first page.
     async function fetchCatalogs() {
+        const PAGE_SIZE = 500;
         isLoading.value = true;
         error.value   = null;
         try {
-            const response = await fetch(`${API_URL}/catalogs`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem("token")}`,
-                    'Temporal-Secret-Key': `${localStorage.getItem("secret")}`
-                }
-            });
-            if(response.ok){
-                const data:CatalogSummaryDTO[] = await response.json();
-                catalogs.value = data;
-            }else {
-                throw new Error(`Error fetching catalogs: ${response.statusText}`);
+            const all: CatalogSummaryDTO[] = [];
+            let skip = 0;
+            while (true) {
+                const page = await fetchCatalogPage({ skip, limit: PAGE_SIZE });
+                all.push(...page.items);
+                if (!page.has_more || page.items.length === 0) break;
+                skip += page.items.length;
             }
-
+            catalogs.value = all;
         } catch (e: any) {
-            error.value = e?.response?.data?.detail ?? 'Error al cargar los catálogos';
+            error.value = e?.detail ?? 'Error al cargar los catálogos';
         } finally {
             isLoading.value = false;
         }
@@ -81,11 +117,13 @@ export const useJubStore = defineStore('jub', () => {
                 const data:Notification[] = await response.json();
                 return data;
             }else {
+                if (response.status === 401) trigger401();
                 throw new Error(`Error fetching notifications: ${response.statusText}`);
             }
         }catch(e){
+            // Background fetch from the layout: don't write the shared `error`,
+            // otherwise whichever page is open shows it as its own error.
             console.error(e);
-            error.value = e instanceof Error ? e.message : String(e);
             return [];
         }finally {
             isLoading.value = false;
@@ -110,7 +148,6 @@ export const useJubStore = defineStore('jub', () => {
             }
         }catch(e){
             console.error(e);
-            error.value = e instanceof Error ? e.message : String(e);
             return false;
         }finally {
             isLoading.value = false;
@@ -134,7 +171,6 @@ export const useJubStore = defineStore('jub', () => {
             }
         }catch(e){
             console.error(e);
-            error.value = e instanceof Error ? e.message : String(e);
             return false;
         }finally {
             isLoading.value = false;
@@ -143,6 +179,7 @@ export const useJubStore = defineStore('jub', () => {
 
 
     async function get_settings(userId: string): Promise<UserSettings> {
+        error.value = null;
         try{
             isLoading.value = true;
             const response = await fetch(`${API_URL}/users/${userId}/settings`, {
@@ -210,16 +247,15 @@ export const useJubStore = defineStore('jub', () => {
             }
         }catch(e){
             console.error(e);
-            error.value = e instanceof Error ? e.message : String(e);
             return false;
         }finally {
             isLoading.value = false;
         }
     }
-    async function get_observatories(): Promise<ObservatoryDTO[]>  {
+    async function get_observatories(pageIndex = 0, limit = 12): Promise<ObservatoryDTO[]>  {
+        error.value = null;
         try{
-            isLoading.value = true;
-            const response = await fetch(`${API_URL}/observatories`, { headers: authHeaders() });
+            const response = await fetch(`${API_URL}/observatories?page_index=${pageIndex}&limit=${limit}`, { headers: authHeaders() });
             if(response.ok){
                 const data:ObservatoryDTO[] = await response.json();
                 return data;
@@ -231,11 +267,24 @@ export const useJubStore = defineStore('jub', () => {
             console.error(e);
             error.value = e instanceof Error ? e.message : String(e);
             return [];
-        }finally {
-            isLoading.value = false
         }
     }
+    async function setObservatoryStatus(observatoryId: string, isDisabled: boolean): Promise<ObservatoryDTO> {
+        const response = await fetch(`${API_URL}/observatories/${observatoryId}/status`, {
+            method: 'PATCH',
+            headers: authHeaders(),
+            body: JSON.stringify({ is_disabled: isDisabled }),
+        });
+        if (!response.ok) {
+            if (response.status === 401) trigger401();
+            const body = await response.json().catch(() => ({}));
+            const detail = typeof body?.detail === 'string' ? body.detail : response.statusText;
+            throw new JubApiError(response.status, detail);
+        }
+        return await response.json() as ObservatoryDTO;
+    }
     async function search_observatories(query:string,strict:boolean, skip = 0, limit = 24, no_cache = false): Promise<ObservatoryDTO[]>{
+        error.value = null;
         try{
             isLoading.value = true;
             const response = await fetch(`${API_URL}/search/observatories`, {
@@ -264,6 +313,7 @@ export const useJubStore = defineStore('jub', () => {
     }
 
     async function search(query: string, observatory_id: string | null, skip: number, limit: number, strict = false, no_cache = false): Promise<ProductXDTO[]>{
+        error.value = null;
         try{
             isLoading.value = true;
             const response = await fetch(`${API_URL}/search`, {
@@ -318,6 +368,7 @@ export const useJubStore = defineStore('jub', () => {
         }
     }
     async function upload_yaml(file: File | Blob): Promise<boolean> {
+        error.value = null;
         try {
             isLoading.value = true;
             const formData = new FormData();
@@ -347,28 +398,17 @@ export const useJubStore = defineStore('jub', () => {
         }
     }
 
-    async function fetchCatalog(catalogId: string) {
-    // Don't re-fetch if it's already the same catalog
-        if (catalog.value?.catalog_id === catalogId) return;
-
-        isLoading.value = true;
-        error.value   = null;
-        catalog.value = null;
-        try {
-            const response = await fetch(`${API_URL}/catalogs/${catalogId}`, { headers: authHeaders() });
-            const data: CatalogResponseDTO = await response.json();
-            catalog.value = data;
-        } catch (e: any) {
-            error.value = e?.response?.data?.detail ?? 'Error al cargar el catálogo';
-        } finally {
-            isLoading.value = false;
+    // Returns the catalog or throws JubApiError; the caller owns loading/error state.
+    async function fetchCatalog(catalogId: string, signal?: AbortSignal): Promise<CatalogResponseDTO> {
+        const response = await fetch(`${API_URL}/catalogs/${catalogId}`, { headers: authHeaders(), signal });
+        if (response.status === 401) trigger401();
+        if (!response.ok) {
+            const body = await response.json().catch(() => null);
+            const detail = typeof body?.detail === 'string' ? body.detail : response.statusText;
+            throw new JubApiError(response.status, detail);
         }
+        return await response.json() as CatalogResponseDTO;
     }
-
-  function reset() {
-    catalog.value = null;
-    error.value   = null;
-  }
 
   function authHeaders() {
     return {
@@ -436,6 +476,7 @@ export const useJubStore = defineStore('jub', () => {
   }
 
   async function searchServices(query: string, skip = 0, limit = 100, strict = false): Promise<ServiceDTO[]> {
+    error.value = null;
     try {
       isLoading.value = true;
       const headers = authHeaders();
@@ -507,6 +548,7 @@ export const useJubStore = defineStore('jub', () => {
 
   async function fetchDataSources(): Promise<DataSourceDTO[]> {
     try {
+      error.value = null;
       isLoading.value = true;
       const response = await fetch(`${API_URL}/datasources`, { headers: authHeaders() });
       if (!response.ok) throw new Error(response.statusText);
@@ -521,6 +563,7 @@ export const useJubStore = defineStore('jub', () => {
 
   async function fetchDataSource(sourceId: string): Promise<DataSourceDTO | null> {
     try {
+      error.value = null;
       isLoading.value = true;
       const response = await fetch(`${API_URL}/datasources/${sourceId}`, { headers: authHeaders() });
       if (!response.ok) throw new Error(response.statusText);
@@ -534,6 +577,7 @@ export const useJubStore = defineStore('jub', () => {
   }
 
   async function fetchTasksStats(): Promise<TasksStatsDTO> {
+    error.value = null;
     try {
       isLoading.value = true;
       const response = await fetch(`${API_URL}/tasks/stats`, { headers: authHeaders() });
@@ -548,6 +592,7 @@ export const useJubStore = defineStore('jub', () => {
   }
 
   async function fetchTasks(skip = 0, limit = 20): Promise<TaskXDTO[]> {
+    error.value = null;
     try {
       isLoading.value = true;
       const response = await fetch(`${API_URL}/tasks?skip=${skip}&limit=${limit}`, { headers: authHeaders() });
@@ -562,6 +607,7 @@ export const useJubStore = defineStore('jub', () => {
   }
 
   async function fetchTask(taskId: string): Promise<TaskXDTO | null> {
+    error.value = null;
     try {
       isLoading.value = true;
       const response = await fetch(`${API_URL}/tasks/${taskId}`, { headers: authHeaders() });
@@ -576,6 +622,7 @@ export const useJubStore = defineStore('jub', () => {
   }
 
   async function retryTask(taskId: string): Promise<boolean> {
+    error.value = null;
     try {
       isLoading.value = true;
       const response = await fetch(`${API_URL}/tasks/${taskId}/retry`, {
@@ -594,6 +641,7 @@ export const useJubStore = defineStore('jub', () => {
 
   async function queryDataSource(sourceId: string, query: string, limit = 100, skip = 0): Promise<DataRecord[]> {
     try {
+      error.value = null;
       isLoading.value = true;
       const response = await fetch(`${API_URL}/datasources/${sourceId}/query`, {
         method: 'POST',
@@ -610,7 +658,8 @@ export const useJubStore = defineStore('jub', () => {
     }
   }
 
-  async function fetchProductTagDetails(productId: string): Promise<CatalogItemXResponseDTO[]> {
+  async function fetchProductTagDetails(productId: string): Promise<CatalogItemXResponseDTO[] | null> {
+    error.value = null;
     const LS_KEY = `jub:tags:${productId}`;
     if (tagDetailsStoreCache.value[productId]) return tagDetailsStoreCache.value[productId];
     const stored = localStorage.getItem(LS_KEY);
@@ -632,8 +681,21 @@ export const useJubStore = defineStore('jub', () => {
       return result;
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);
-      return [];
+      return null;
     }
+  }
+
+  function clearProductTagCache(productId: string) {
+    delete tagDetailsStoreCache.value[productId];
+    localStorage.removeItem(`jub:tags:${productId}`);
+  }
+
+  function clearAllSearchCache() {
+    tagDetailsStoreCache.value = {};
+    catalogItemsCache.value    = {};
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('jub:') && !k.startsWith('jub:tour:seen:'))
+      .forEach(k => localStorage.removeItem(k));
   }
 
   async function _downloadWithSignal(
@@ -737,6 +799,7 @@ export const useJubStore = defineStore('jub', () => {
     productId: string,
     onProgress?: (pct: number) => void,
   ): Promise<{ url: string | null; type: string | null; size: number | null }> {
+    error.value = null;
     try {
       const ctrl = new AbortController();
       return await _downloadWithSignal(productId, ctrl.signal, onProgress);
@@ -758,7 +821,7 @@ export const useJubStore = defineStore('jub', () => {
       if (!res.ok) throw new Error(res.statusText);
       return await res.json();
     } catch (e) {
-      error.value = e instanceof Error ? e.message : String(e);
+      console.error(e);
       return null;
     }
   }
@@ -766,6 +829,7 @@ export const useJubStore = defineStore('jub', () => {
   async function fetchObservatorySuggestions(
     limit = 5,
   ): Promise<ObservatorySuggestionResponseDTO | null> {
+    error.value = null;
     try {
       const params = new URLSearchParams({ limit: String(limit) });
       const res = await fetch(`${API_URL}/search/observatories/suggestions?${params}`, {
@@ -859,7 +923,7 @@ export const useJubStore = defineStore('jub', () => {
         _observatoryCatalogsCache.set(observatoryId, data);
         return data;
       } catch (e) {
-        error.value = e instanceof Error ? e.message : String(e);
+        console.error(e);
         return [];
       } finally {
         isLoadingObsCatalogs.value = false;
@@ -868,6 +932,7 @@ export const useJubStore = defineStore('jub', () => {
 
     return {
         get_observatories,
+        setObservatoryStatus,
         getObservatory,
         fetchObservatoryStats,
         search,
@@ -881,12 +946,12 @@ export const useJubStore = defineStore('jub', () => {
         convert_theme_to_jub_format,
         isLoading,
         error,
-        catalog,
         catalogs,
         catalogItemsCache,
         tagDetailsStoreCache,
         fetchCatalog,
         fetchCatalogs,
+        fetchCatalogPage,
         fetchDataSources,
         fetchDataSource,
         queryDataSource,
@@ -899,6 +964,8 @@ export const useJubStore = defineStore('jub', () => {
         searchServices,
         generatePlot,
         fetchProductTagDetails,
+        clearProductTagCache,
+        clearAllSearchCache,
         downloadProduct,
         enqueueDownload,
         cancelDownload,
@@ -913,7 +980,6 @@ export const useJubStore = defineStore('jub', () => {
         isSlowNetwork,
         fetchSearchSuggestions,
         fetchObservatorySuggestions,
-        reset,
         incrementViews,
         getReviews,
         createReview,

@@ -8,6 +8,7 @@ import {
     // type UserProfile,
     type UserSettings,
 } from '@/types/index.types'
+import { getEnv } from '@/utils/env'
 
 
 export interface VerifyBannerState {
@@ -27,8 +28,8 @@ export const useAuthStore = defineStore('auth', () => {
     const verifyBanner  = ref<VerifyBannerState | null>(null);
     const _verifyAbort  = ref<boolean>(false);
 
-    const XOLO_API_URL = import.meta.env.VITE_XOLO_API_URL || 'http://localhost:10000/api/v4';
-    const JUB_API_URL = import.meta.env.VITE_JUB_API_URL || 'http://localhost:5000/api/v2';
+    const XOLO_API_URL = getEnv('VITE_XOLO_API_URL', 'http://localhost:10000/api/v4');
+    const JUB_API_URL = getEnv('VITE_JUB_API_URL', 'http://localhost:5000/api/v2');
 
     function clearLocalStorage() {
         localStorage.removeItem("token");

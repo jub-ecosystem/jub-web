@@ -20,24 +20,24 @@
     </v-tooltip>
 
     <!-- Loading -->
-    <template v-if="store.isLoading">
+    <template v-if="loading">
       <v-skeleton-loader type="heading" class="mb-8" />
       <v-skeleton-loader type="table" rounded="xl" />
     </template>
 
     <!-- Error -->
-    <v-alert v-else-if="store.error" type="error" rounded="xl" :text="store.error" class="mb-6" />
+    <v-alert v-else-if="error" type="error" rounded="xl" :text="error" class="mb-6" />
 
-    <template v-else-if="store.catalog">
+    <template v-else-if="catalog">
 
       <!-- Header -->
       <v-card rounded="xl" elevation="1" class="mb-8 border-s-lg" style="border-left-color: rgb(var(--v-theme-primary)) !important;" data-tour="catd-header">
         <v-card-text class="d-flex align-center justify-space-between flex-wrap ga-4 pa-6">
           <div>
             <div class="d-flex align-center ga-3 mb-1">
-              <h1 class="text-h4 font-weight-black">{{ store.catalog.name }}</h1>
+              <h1 class="text-h4 font-weight-black">{{ catalog.name }}</h1>
               <v-chip color="primary" variant="flat" size="small" class="font-monospace font-weight-bold">
-                {{ store.catalog.value }}
+                {{ catalog.value }}
               </v-chip>
             </div>
             <p class="text-body-1 text-grey-darken-1 mb-0">
@@ -46,7 +46,7 @@
           </div>
           <div class="d-flex ga-2">
             <v-chip prepend-icon="mdi-tag-outline" color="secondary-blue" variant="tonal" class="font-weight-bold">
-              {{ store.catalog.catalog_type }}
+              {{ catalog.catalog_type }}
             </v-chip>
           </div>
         </v-card-text>
@@ -131,11 +131,11 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useTour } from '@/composables/useTour';
 import { useRouter, useRoute } from 'vue-router';
 import { useJubStore } from '@/stores/jub';
-import { type CatalogItemDTO } from '@/types/index.types';
+import { type CatalogItemDTO, type CatalogResponseDTO } from '@/types/index.types';
 // import { useCatalogDetailsStore } from '@/stores/catalog-details.store';
 
 definePage({
@@ -148,13 +148,36 @@ const route     = useRoute('CatalogDetails');
 const store     = useJubStore();
 const searchItem = ref('');
 
+const catalog = ref<CatalogResponseDTO | null>(null);
+const loading = ref(false);
+const error   = ref<string | null>(null);
+
+let controller: AbortController | null = null;
+
+async function loadCatalog(catalogId: string) {
+  controller?.abort();
+  const ctrl = new AbortController();
+  controller = ctrl;
+  loading.value = true;
+  error.value   = null;
+  catalog.value = null;
+  try {
+    catalog.value = await store.fetchCatalog(catalogId, ctrl.signal);
+  } catch (e: any) {
+    if (e?.name === 'AbortError') return;
+    error.value = e?.status === 404 ? 'El catálogo no existe' : (e?.detail || 'Error al cargar el catálogo');
+  } finally {
+    if (controller === ctrl) loading.value = false;
+  }
+}
+
 // Flatten items + all descendants for the table (handles children recursively)
 function flattenItems(items: CatalogItemDTO[]): CatalogItemDTO[] {
   return items.flatMap(item => [item, ...flattenItems(item.children ?? [])]);
 }
 
 const filteredItems = computed(() => {
-  const flat = flattenItems(store.catalog?.items ?? []);
+  const flat = flattenItems(catalog.value?.items ?? []);
   if (!searchItem.value) return flat;
   const q = searchItem.value.toLowerCase();
   return flat.filter(item =>
@@ -176,11 +199,18 @@ const catalogDetailTourSteps = [
 const { startTour, replayTour } = useTour(catalogDetailTourSteps, { pageKey: 'catalog-detail' });
 
 onMounted(async () => {
-  const catalogId = route.params.catalogId as string;
-  await store.fetchCatalog(catalogId);
+  await loadCatalog(route.params.catalogId as string);
   await nextTick();
   startTour();
 });
 
-onBeforeUnmount(() => store.reset());
+// Same component is reused when navigating between catalogs.
+watch(() => route.params.catalogId, (id, prev) => {
+  if (id && id !== prev) {
+    searchItem.value = '';
+    loadCatalog(id as string);
+  }
+});
+
+onBeforeUnmount(() => controller?.abort());
 </script>

@@ -42,11 +42,36 @@
             {{ loginLabel }}
           </v-btn>
 
-          <v-btn variant="text" color="grey-darken-1" class="text-none text-body-2" density="compact" :ripple="false">
+          <v-btn variant="text" color="grey-darken-1" class="text-none text-body-2" density="compact" :ripple="false" @click="showRecoveryDialog = true">
             Olvidaste tu contraseña ?
           </v-btn>
 
         </v-form>
+
+        <v-dialog v-model="showRecoveryDialog" max-width="400">
+          <v-card rounded="0" elevation="4">
+            <v-toolbar color="black" density="comfortable" flat>
+              <v-btn icon="mdi-close" variant="text" color="white" @click="showRecoveryDialog = false" />
+              <v-toolbar-title class="text-white text-body-1 font-weight-medium ml-n2">
+                Recuperación de contraseña
+              </v-toolbar-title>
+            </v-toolbar>
+            <v-card-text class="px-8 py-6 text-center bg-white">
+              <v-icon size="48" color="grey-lighten-1" class="mb-4">mdi-lock-clock</v-icon>
+              <p class="text-body-1 font-weight-medium mb-2">Función no disponible</p>
+              <p class="text-body-2 text-grey-darken-1">
+                La recuperación de contraseña se encuentra en desarrollo.<br>
+                Por favor, contacta al administrador del sistema.
+              </p>
+            </v-card-text>
+            <v-card-actions class="px-8 pb-6 justify-center">
+              <v-btn color="black" variant="flat" rounded="0" @click="showRecoveryDialog = false">
+                Entendido
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+
       </v-card-text>
     </v-card>
   </v-dialog>
@@ -68,6 +93,7 @@ const appStore = useAppStore();
 
 const { showAuthDialog } = storeToRefs(authStore);
 
+const showRecoveryDialog = ref(false);
 const username = ref('');
 const password = ref('');
 

@@ -49,6 +49,7 @@
           </v-btn>
 
           <v-btn
+            disabled
             rounded="pill"
             size="large"
             elevation="0"

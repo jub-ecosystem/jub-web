@@ -8,7 +8,7 @@ const assistantStore = useAssistantStore()
 <template>
   <Teleport to="body">
     <Transition name="jub-slide">
-      <div v-if="assistantStore.isOpen" class="jub-assistant-drawer">
+      <div v-show="assistantStore.isOpen" class="jub-assistant-drawer">
         <!-- Header -->
         <div class="jub-drawer-header">
           <div class="d-flex align-center ga-2">
